@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CFC Admin Dashboard (No Login)</title>
+<title>CFC Admin Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -14,7 +14,7 @@
     }
 
     .box {
-        max-width: 1000px;
+        max-width: 1100px;
         margin: auto;
         background: #fff;
         border-radius: 12px;
@@ -55,11 +55,11 @@
     }
 
     .approve { background: #28a745; color: #fff; }
-    .reject  { background: #dc3545; color: #fff; }
-    .mint    { background: #0066ff; color: #fff; }
+    .reject { background: #dc3545; color: #fff; }
+    .mint   { background: #0066ff; color: #fff; }
 
     .preview-img {
-        max-width: 120px;
+        max-width: 140px;
         border-radius: 6px;
     }
 </style>
@@ -67,7 +67,20 @@
 
 <body>
 
-<div class="box" id="adminPanel">
+<div class="box" id="loginBox">
+    <h1>Admin Login</h1>
+
+    <label>Password</label>
+    <input type="password" id="passwordInput" style="width:100%;padding:12px;border-radius:6px;border:1px solid #ccc;">
+
+    <button onclick="adminLogin()" style="margin-top:15px;background:#000;color:#fff;padding:14px;border:none;border-radius:6px;width:100%;font-size:17px;">
+        Login
+    </button>
+
+    <div id="loginMsg" style="margin-top:15px; color:red;"></div>
+</div>
+
+<div class="box" id="adminPanel" style="display:none;">
     <h1>CFC NFT Creator — Admin Dashboard</h1>
 
     <table id="subTable">
@@ -86,11 +99,33 @@
 
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
-// Hard-coded because the page itself is behind GoDaddy admin protection
-const ADMIN_PASSWORD = "CFCBaby3!";
+let ADMIN_PASSWORD = "";
 
-// LOAD SUBMISSIONS ON PAGE LOAD
-window.addEventListener("load", loadSubmissions);
+// ---------------------------
+// ADMIN LOGIN
+// ---------------------------
+async function adminLogin() {
+    const pass = document.getElementById("passwordInput").value;
+    ADMIN_PASSWORD = pass;
+
+    const res = await fetch(BACKEND + "/api/admin/login", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ password: pass })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+        document.getElementById("loginMsg").innerText = "Incorrect password.";
+        return;
+    }
+
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
+
+    loadSubmissions();
+}
 
 // ---------------------------
 // LOAD SUBMISSIONS
@@ -106,7 +141,7 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
-        // fetch metadata from IPFS
+        // Fetch metadata JSON from IPFS
         let metadata = {};
         try {
             const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
@@ -115,20 +150,20 @@ async function loadSubmissions() {
             metadata = { name: s.name, description: s.description };
         }
 
+        // File Preview Handling
         let previewHTML = "";
         const cid = s.image_cid;
         const ipfsURL = "https://ipfs.io/ipfs/" + cid;
 
-        if (cid && cid.endsWith(".pdf")) {
+        if (cid.endsWith(".pdf")) {
             previewHTML = `<a href="${ipfsURL}" target="_blank">📄 View PDF</a>`;
-        } else if (cid && cid.match(/\.(mp4|mov|webm)$/i)) {
-            previewHTML = `<video src="${ipfsURL}" width="120" controls></video>`;
-        } else if (cid) {
-            previewHTML = `<img src="${ipfsURL}" class="preview-img">`;
+        } else if (cid.match(/\.(mp4|mov|webm)$/i)) {
+            previewHTML = `<video src="${ipfsURL}" width="140" controls></video>`;
         } else {
-            previewHTML = "No media";
+            previewHTML = `<img src="${ipfsURL}" class="preview-img">`;
         }
 
+        // Build table row
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
@@ -138,15 +173,25 @@ async function loadSubmissions() {
 
             <td>
                 <strong>Name:</strong> ${metadata.name || s.name} <br>
+                
                 <strong>Description:</strong><br>
-                <div style="white-space:pre-line;margin-top:5px;">${metadata.description || s.description}</div>
+                <div style="white-space:pre-line;margin-top:5px;">
+                    ${metadata.description || s.description}
+                </div>
                 <br>
+
+                <strong>Wallet:</strong> ${s.creator_wallet} <br>
+                <strong>Quantity:</strong> ${s.batch_qty} <br>
+
                 <strong>Price XRP:</strong> ${metadata.price_xrp || "—"} <br>
                 <strong>Price RLUSD:</strong> ${metadata.price_rlusd || "—"} <br>
-                <strong>Quantity:</strong> ${s.batch_qty} <br>
-                <strong>Creator Wallet:</strong> ${s.creator_wallet} <br>
-                <strong>Metadata:</strong> <a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View Metadata</a> <br>
-                <strong>Image/Media CID:</strong> <a href="${ipfsURL}" target="_blank">${s.image_cid || "—"}</a> <br>
+
+                <strong>Metadata:</strong> 
+                    <a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View</a> <br>
+
+                <strong>Image/Media CID:</strong> 
+                    <a href="${ipfsURL}" target="_blank">${s.image_cid}</a> <br>
+
                 <strong>Created:</strong> ${s.created_at}
             </td>
 
@@ -200,11 +245,13 @@ async function reject(id) {
 // ---------------------------
 async function mint(id) {
     alert("Minting started. Creator must sign in Xaman.");
+    
     await fetch(BACKEND + "/api/admin/mint", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
+
     loadSubmissions();
 }
 </script>
