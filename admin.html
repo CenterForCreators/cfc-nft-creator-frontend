@@ -14,7 +14,7 @@
     }
 
     .box {
-        max-width: 900px;
+        max-width: 1000px;
         margin: auto;
         background: #fff;
         border-radius: 12px;
@@ -24,35 +24,6 @@
     h1 {
         text-align: center;
         margin-bottom: 25px;
-    }
-
-    label {
-        font-weight: bold;
-        display: block;
-        margin-top: 15px;
-    }
-
-    input {
-        width: 100%;
-        padding: 12px;
-        margin-top: 8px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-    }
-
-    button {
-        background: #000;
-        color: #fff;
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 6px;
-        margin-top: 20px;
-        font-size: 17px;
-        cursor: pointer;
-    }
-    button:hover {
-        background: #333;
     }
 
     table {
@@ -65,6 +36,7 @@
     th, td {
         padding: 12px;
         border-bottom: 1px solid #ccc;
+        vertical-align: top;
     }
 
     th {
@@ -85,6 +57,11 @@
     .approve { background: #28a745; color: #fff; }
     .reject { background: #dc3545; color: #fff; }
     .mint   { background: #0066ff; color: #fff; }
+
+    .preview-img {
+        max-width: 120px;
+        border-radius: 6px;
+    }
 </style>
 </head>
 
@@ -94,9 +71,11 @@
     <h1>Admin Login</h1>
 
     <label>Password</label>
-    <input type="password" id="passwordInput">
+    <input type="password" id="passwordInput" style="width:100%;padding:12px;border-radius:6px;border:1px solid #ccc;">
 
-    <button onclick="adminLogin()">Login</button>
+    <button onclick="adminLogin()" style="margin-top:15px;background:#000;color:#fff;padding:14px;border:none;border-radius:6px;width:100%;font-size:17px;">
+        Login
+    </button>
 
     <div id="loginMsg" style="margin-top:15px; color:red;"></div>
 </div>
@@ -108,11 +87,8 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Wallet</th>
-                <th>Name</th>
-                <th>Qty</th>
-                <th>Price (XRP)</th>
-                <th>Price (RLUSD)</th>
+                <th>Preview</th>
+                <th>Details</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -163,26 +139,61 @@ async function loadSubmissions() {
     const tbody = document.querySelector("#subTable tbody");
     tbody.innerHTML = "";
 
-    subs.forEach(s => {
+    for (const s of subs) {
+
+        // fetch metadata from IPFS
+        let metadata = {};
+        try {
+            const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
+            metadata = await mdRes.json();
+        } catch (e) {
+            metadata = { name: s.name, description: s.description };
+        }
+
+        let previewHTML = "";
+        const cid = s.image_cid;
+        const ipfsURL = "https://ipfs.io/ipfs/" + cid;
+
+        if (cid.endsWith(".pdf")) {
+            previewHTML = `<a href="${ipfsURL}" target="_blank">📄 View PDF</a>`;
+        } else if (cid.match(/\.(mp4|mov|webm)$/i)) {
+            previewHTML = `<video src="${ipfsURL}" width="120" controls></video>`;
+        } else {
+            previewHTML = `<img src="${ipfsURL}" class="preview-img">`;
+        }
+
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
             <td>${s.id}</td>
-            <td>${s.creator_wallet}</td>
-            <td>${s.name}</td>
-            <td>${s.batch_qty}</td>
-            <td>${s.price_xrp || "—"}</td>
-            <td>${s.price_klusd || s.price_usd || "—"}</td>
-            <td style="font-weight:bold;">${s.status}</td>
+
+            <td>${previewHTML}</td>
+
             <td>
-                ${
-                    s.status === "pending"
-                    ? `<button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                       <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>`
+                <strong>Name:</strong> ${metadata.name || s.name} <br>
+                <strong>Description:</strong><br>
+                <div style="white-space:pre-line;margin-top:5px;">${metadata.description || s.description}</div>
+                <br>
+                <strong>Price XRP:</strong> ${metadata.price_xrp || "—"} <br>
+                <strong>Price RLUSD:</strong> ${metadata.price_rlusd || "—"} <br>
+                <strong>Quantity:</strong> ${s.batch_qty} <br>
+                <strong>Creator Wallet:</strong> ${s.creator_wallet} <br>
+                <strong>Metadata:</strong> <a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View Metadata</a> <br>
+                <strong>Image/Media CID:</strong> <a href="${ipfsURL}" target="_blank">${s.image_cid}</a> <br>
+                <strong>Created:</strong> ${s.created_at}
+            </td>
+
+            <td style="font-weight:bold;">${s.status}</td>
+
+            <td>
+                ${s.status === "pending"
+                    ? `
+                        <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                        <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+                      `
                     : ""
                 }
-                ${
-                    s.status === "approved"
+                ${s.status === "approved"
                     ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
                     : ""
                 }
@@ -190,7 +201,7 @@ async function loadSubmissions() {
         `;
 
         tbody.appendChild(tr);
-    });
+    }
 }
 
 // ---------------------------
@@ -202,7 +213,6 @@ async function approve(id) {
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 
@@ -215,7 +225,6 @@ async function reject(id) {
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 
@@ -223,14 +232,12 @@ async function reject(id) {
 // MINT
 // ---------------------------
 async function mint(id) {
-    alert("Minting will start. The creator must sign in Xaman.");
-
+    alert("Minting started. Creator must sign in Xaman.");
     await fetch(BACKEND + "/api/admin/mint", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 </script>
