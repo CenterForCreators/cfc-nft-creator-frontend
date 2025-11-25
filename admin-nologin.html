@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CFC Admin Dashboard</title>
+<title>CFC Admin Dashboard (No Login)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -55,8 +55,8 @@
     }
 
     .approve { background: #28a745; color: #fff; }
-    .reject { background: #dc3545; color: #fff; }
-    .mint   { background: #0066ff; color: #fff; }
+    .reject  { background: #dc3545; color: #fff; }
+    .mint    { background: #0066ff; color: #fff; }
 
     .preview-img {
         max-width: 140px;
@@ -67,21 +67,8 @@
 
 <body>
 
-<div class="box" id="loginBox">
-    <h1>Admin Login</h1>
-
-    <label>Password</label>
-    <input type="password" id="passwordInput" style="width:100%;padding:12px;border-radius:6px;border:1px solid #ccc;">
-
-    <button onclick="adminLogin()" style="margin-top:15px;background:#000;color:#fff;padding:14px;border:none;border-radius:6px;width:100%;font-size:17px;">
-        Login
-    </button>
-
-    <div id="loginMsg" style="margin-top:15px; color:red;"></div>
-</div>
-
-<div class="box" id="adminPanel" style="display:none;">
-    <h1>CFC NFT Creator — Admin Dashboard</h1>
+<div class="box">
+    <h1>CFC NFT Creator — Admin Dashboard (No Login)</h1>
 
     <table id="subTable">
         <thead>
@@ -99,41 +86,12 @@
 
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
-let ADMIN_PASSWORD = "";
 
 // ---------------------------
-// ADMIN LOGIN
-// ---------------------------
-async function adminLogin() {
-    const pass = document.getElementById("passwordInput").value;
-    ADMIN_PASSWORD = pass;
-
-    const res = await fetch(BACKEND + "/api/admin/login", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ password: pass })
-    });
-
-    const data = await res.json();
-
-    if (!data.success) {
-        document.getElementById("loginMsg").innerText = "Incorrect password.";
-        return;
-    }
-
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("adminPanel").style.display = "block";
-
-    loadSubmissions();
-}
-
-// ---------------------------
-// LOAD SUBMISSIONS
+// LOAD SUBMISSIONS (no login)
 // ---------------------------
 async function loadSubmissions() {
-    const res = await fetch(
-        BACKEND + "/api/admin/submissions?password=" + ADMIN_PASSWORD
-    );
+    const res = await fetch(BACKEND + "/api/admin/submissions?password=CFCBaby3!");
     const subs = await res.json();
 
     const tbody = document.querySelector("#subTable tbody");
@@ -141,7 +99,7 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
-        // Fetch metadata JSON from IPFS
+        // fetch metadata from IPFS
         let metadata = {};
         try {
             const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
@@ -150,7 +108,6 @@ async function loadSubmissions() {
             metadata = { name: s.name, description: s.description };
         }
 
-        // File Preview Handling
         let previewHTML = "";
         const cid = s.image_cid;
         const ipfsURL = "https://ipfs.io/ipfs/" + cid;
@@ -163,7 +120,6 @@ async function loadSubmissions() {
             previewHTML = `<img src="${ipfsURL}" class="preview-img">`;
         }
 
-        // Build table row
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
@@ -173,39 +129,31 @@ async function loadSubmissions() {
 
             <td>
                 <strong>Name:</strong> ${metadata.name || s.name} <br>
-                
                 <strong>Description:</strong><br>
-                <div style="white-space:pre-line;margin-top:5px;">
-                    ${metadata.description || s.description}
-                </div>
+                <div style="white-space:pre-line;margin-top:5px;">${metadata.description || s.description}</div>
                 <br>
-
-                <strong>Wallet:</strong> ${s.creator_wallet} <br>
-                <strong>Quantity:</strong> ${s.batch_qty} <br>
-
                 <strong>Price XRP:</strong> ${metadata.price_xrp || "—"} <br>
                 <strong>Price RLUSD:</strong> ${metadata.price_rlusd || "—"} <br>
-
-                <strong>Metadata:</strong> 
-                    <a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View</a> <br>
-
-                <strong>Image/Media CID:</strong> 
-                    <a href="${ipfsURL}" target="_blank">${s.image_cid}</a> <br>
-
+                <strong>Quantity:</strong> ${s.batch_qty} <br>
+                <strong>Creator Wallet:</strong> ${s.creator_wallet} <br>
+                <strong>Metadata:</strong> <a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View Metadata</a> <br>
+                <strong>Media CID:</strong> <a href="${ipfsURL}" target="_blank">${s.image_cid}</a> <br>
                 <strong>Created:</strong> ${s.created_at}
             </td>
 
             <td style="font-weight:bold;">${s.status}</td>
 
             <td>
-                ${s.status === "pending"
+                ${
+                    s.status === "pending"
                     ? `
                         <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
                         <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
                       `
                     : ""
                 }
-                ${s.status === "approved"
+                ${
+                    s.status === "approved"
                     ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
                     : ""
                 }
@@ -217,43 +165,38 @@ async function loadSubmissions() {
 }
 
 // ---------------------------
-// APPROVE
+// ACTIONS
 // ---------------------------
 async function approve(id) {
     await fetch(BACKEND + "/api/admin/approve", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+        body: JSON.stringify({ id, password: "CFCBaby3!" })
     });
     loadSubmissions();
 }
 
-// ---------------------------
-// REJECT
-// ---------------------------
 async function reject(id) {
     await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+        body: JSON.stringify({ id, password: "CFCBaby3!" })
     });
     loadSubmissions();
 }
 
-// ---------------------------
-// MINT
-// ---------------------------
 async function mint(id) {
     alert("Minting started. Creator must sign in Xaman.");
-    
     await fetch(BACKEND + "/api/admin/mint", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+        body: JSON.stringify({ id, password: "CFCBaby3!" })
     });
-
     loadSubmissions();
 }
+
+// load immediately
+loadSubmissions();
 </script>
 
 </body>
