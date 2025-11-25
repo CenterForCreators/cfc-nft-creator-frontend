@@ -14,7 +14,7 @@
     }
 
     .box {
-        max-width: 1100px;
+        max-width: 1200px;
         margin: auto;
         background: #fff;
         border-radius: 12px;
@@ -75,7 +75,14 @@
             <tr>
                 <th>ID</th>
                 <th>Preview</th>
-                <th>Details</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Price XRP</th>
+                <th>Price RLUSD</th>
+                <th>Wallet</th>
+                <th>Metadata</th>
+                <th>Media</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -86,12 +93,15 @@
 
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
+const ADMIN_PASSWORD = "CFCBaby3!"; // No login—sent automatically
 
 // ---------------------------
-// LOAD SUBMISSIONS (no login)
+// LOAD ALL SUBMISSIONS AUTOMATICALLY
 // ---------------------------
 async function loadSubmissions() {
-    const res = await fetch(BACKEND + "/api/admin/submissions?password=CFCBaby3!");
+    const res = await fetch(
+        BACKEND + "/api/admin/submissions?password=" + ADMIN_PASSWORD
+    );
     const subs = await res.json();
 
     const tbody = document.querySelector("#subTable tbody");
@@ -99,63 +109,64 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
-        // fetch metadata from IPFS
+        // Fetch metadata.json from IPFS
         let metadata = {};
         try {
             const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
             metadata = await mdRes.json();
-        } catch (e) {
+        } catch (err) {
             metadata = { name: s.name, description: s.description };
         }
 
+        // Media preview
         let previewHTML = "";
-        const cid = s.image_cid;
-        const ipfsURL = "https://ipfs.io/ipfs/" + cid;
+        const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
 
-        if (cid.endsWith(".pdf")) {
-            previewHTML = `<a href="${ipfsURL}" target="_blank">📄 View PDF</a>`;
-        } else if (cid.match(/\.(mp4|mov|webm)$/i)) {
-            previewHTML = `<video src="${ipfsURL}" width="140" controls></video>`;
+        if (s.image_cid.endsWith(".pdf")) {
+            previewHTML = `<a href="${ipfsMediaURL}" target="_blank">📄 PDF</a>`;
+        } else if (s.image_cid.match(/\.(mp4|mov|webm)$/i)) {
+            previewHTML = `<video src="${ipfsMediaURL}" width="140" controls></video>`;
         } else {
-            previewHTML = `<img src="${ipfsURL}" class="preview-img">`;
+            previewHTML = `<img src="${ipfsMediaURL}" class="preview-img">`;
         }
 
         const tr = document.createElement("tr");
-
         tr.innerHTML = `
             <td>${s.id}</td>
 
             <td>${previewHTML}</td>
 
-            <td>
-                <strong>Name:</strong> ${metadata.name || s.name} <br>
-                <strong>Description:</strong><br>
-                <div style="white-space:pre-line;margin-top:5px;">${metadata.description || s.description}</div>
-                <br>
-                <strong>Price XRP:</strong> ${metadata.price_xrp || "—"} <br>
-                <strong>Price RLUSD:</strong> ${metadata.price_rlusd || "—"} <br>
-                <strong>Quantity:</strong> ${s.batch_qty} <br>
-                <strong>Creator Wallet:</strong> ${s.creator_wallet} <br>
-                <strong>Metadata:</strong> <a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View Metadata</a> <br>
-                <strong>Media CID:</strong> <a href="${ipfsURL}" target="_blank">${s.image_cid}</a> <br>
-                <strong>Created:</strong> ${s.created_at}
-            </td>
+            <td>${metadata.name || s.name}</td>
+
+            <td style="white-space:pre-line;">${metadata.description || s.description}</td>
+
+            <td>${s.batch_qty}</td>
+
+            <td>${metadata.price_xrp || "—"}</td>
+
+            <td>${metadata.price_rlusd || "—"}</td>
+
+            <td>${s.creator_wallet}</td>
+
+            <td><a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View</a></td>
+
+            <td><a href="${ipfsMediaURL}" target="_blank">${s.image_cid}</a></td>
 
             <td style="font-weight:bold;">${s.status}</td>
 
             <td>
                 ${
                     s.status === "pending"
-                    ? `
-                        <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                        <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-                      `
-                    : ""
+                        ? `
+                           <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                           <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+                          `
+                        : ""
                 }
                 ${
                     s.status === "approved"
-                    ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
-                    : ""
+                        ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
+                        : ""
                 }
             </td>
         `;
@@ -171,8 +182,9 @@ async function approve(id) {
     await fetch(BACKEND + "/api/admin/approve", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: "CFCBaby3!" })
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
+
     loadSubmissions();
 }
 
@@ -180,8 +192,9 @@ async function reject(id) {
     await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: "CFCBaby3!" })
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
+
     loadSubmissions();
 }
 
@@ -190,12 +203,12 @@ async function mint(id) {
     await fetch(BACKEND + "/api/admin/mint", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: "CFCBaby3!" })
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
+
     loadSubmissions();
 }
 
-// load immediately
 loadSubmissions();
 </script>
 
