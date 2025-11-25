@@ -6,102 +6,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #000;
-        margin: 0;
-        padding: 30px;
-    }
-
-    .box {
-        max-width: 900px;
-        margin: auto;
-        background: #fff;
-        border-radius: 12px;
-        padding: 30px;
-    }
-
-    h1 {
-        text-align: center;
-        margin-bottom: 25px;
-    }
-
-    label {
-        font-weight: bold;
-        display: block;
-        margin-top: 15px;
-    }
-
-    input {
-        width: 100%;
-        padding: 12px;
-        margin-top: 8px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-    }
-
-    button {
-        background: #000;
-        color: #fff;
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 6px;
-        margin-top: 20px;
-        font-size: 17px;
-        cursor: pointer;
-    }
-    button:hover {
-        background: #333;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 30px;
-        font-size: 15px;
-    }
-
-    th, td {
-        padding: 12px;
-        border-bottom: 1px solid #ccc;
-    }
-
-    th {
-        background: #eee;
-        text-align: left;
-        font-weight: bold;
-    }
+    body { font-family: Arial, sans-serif; background:#000; margin:0; padding:30px; }
+    .box { max-width: 900px; margin:auto; background:#fff; border-radius:12px; padding:30px; }
+    h1 { text-align:center; margin-bottom:25px; }
+    table { width:100%; border-collapse:collapse; margin-top:30px; font-size:15px; }
+    th, td { padding:12px; border-bottom:1px solid #ccc; }
+    th { background:#eee; text-align:left; font-weight:bold; }
 
     .action-btn {
-        padding: 6px 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        margin-right: 6px;
+        padding:6px 10px; border:none; border-radius:5px;
+        cursor:pointer; font-size:14px; margin-right:6px;
     }
-
-    .approve { background: #28a745; color: #fff; }
-    .reject { background: #dc3545; color: #fff; }
-    .mint   { background: #0066ff; color: #fff; }
+    .approve { background:#28a745; color:white; }
+    .reject  { background:#dc3545; color:white; }
+    .mint    { background:#0066ff; color:white; }
 </style>
 </head>
 
 <body>
-
-<div class="box" id="loginBox">
-    <h1>Admin Login</h1>
-
-    <label>Password</label>
-    <input type="password" id="passwordInput">
-
-    <button onclick="adminLogin()">Login</button>
-
-    <div id="loginMsg" style="margin-top:15px; color:red;"></div>
-</div>
-
-<div class="box" id="adminPanel" style="display:none;">
+<div class="box" id="adminPanel">
     <h1>CFC NFT Creator — Admin Dashboard</h1>
 
     <table id="subTable">
@@ -111,8 +34,6 @@
                 <th>Wallet</th>
                 <th>Name</th>
                 <th>Qty</th>
-                <th>Price (XRP)</th>
-                <th>Price (RLUSD)</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -123,37 +44,9 @@
 
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
-let ADMIN_PASSWORD = "";
+const ADMIN_PASSWORD = "CFCBaby3!"; // Admin bypass since GoDaddy page is private
 
-// ---------------------------
-// ADMIN LOGIN
-// ---------------------------
-async function adminLogin() {
-    const pass = document.getElementById("passwordInput").value;
-    ADMIN_PASSWORD = pass;
-
-    const res = await fetch(BACKEND + "/api/admin/login", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ password: pass })
-    });
-
-    const data = await res.json();
-
-    if (!data.success) {
-        document.getElementById("loginMsg").innerText = "Incorrect password.";
-        return;
-    }
-
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("adminPanel").style.display = "block";
-
-    loadSubmissions();
-}
-
-// ---------------------------
-// LOAD SUBMISSIONS
-// ---------------------------
+// LOAD ALL SUBMISSIONS
 async function loadSubmissions() {
     const res = await fetch(
         BACKEND + "/api/admin/submissions?password=" + ADMIN_PASSWORD
@@ -171,8 +64,6 @@ async function loadSubmissions() {
             <td>${s.creator_wallet}</td>
             <td>${s.name}</td>
             <td>${s.batch_qty}</td>
-            <td>${s.price_xrp || "—"}</td>
-            <td>${s.price_klusd || s.price_usd || "—"}</td>
             <td style="font-weight:bold;">${s.status}</td>
             <td>
                 ${
@@ -193,46 +84,39 @@ async function loadSubmissions() {
     });
 }
 
-// ---------------------------
 // APPROVE
-// ---------------------------
 async function approve(id) {
     await fetch(BACKEND + "/api/admin/approve", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 
-// ---------------------------
 // REJECT
-// ---------------------------
 async function reject(id) {
     await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 
-// ---------------------------
 // MINT
-// ---------------------------
 async function mint(id) {
-    alert("Minting will start. The creator must sign in Xaman.");
-
+    alert("Minting will start. The creator must sign in with Xaman.");
     await fetch(BACKEND + "/api/admin/mint", {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
+        headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
+
+// LOAD ON START
+loadSubmissions();
 </script>
 
 </body>
