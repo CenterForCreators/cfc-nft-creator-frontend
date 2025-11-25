@@ -60,6 +60,9 @@
 <label>Description</label>
 <textarea id="nftDescription" rows="4"></textarea>
 
+<label>Terms (Rules, conditions, usage rights)</label>
+<textarea id="nftTerms" rows="4" placeholder="Example: This NFT grants access to 1 coaching session, valid for 90 days..."></textarea>
+
 <label>Quantity (1–100)</label>
 <input type="number" id="quantity" min="1" max="100" value="1">
 
@@ -149,7 +152,7 @@ async function checkApprovalStatus() {
 
 // Lock form
 function lockForm() {
-    ["fileInput","nftName","nftDescription","quantity","priceXRP","priceRLUSD"]
+    ["fileInput","nftName","nftDescription","nftTerms","quantity","priceXRP","priceRLUSD"]
     .forEach(id => document.getElementById(id).disabled = true);
 
     document.getElementById("submitBtn").disabled = true;
@@ -173,19 +176,23 @@ async function submitNFT() {
     const file = document.getElementById("fileInput").files[0];
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
+    const terms = document.getElementById("nftTerms").value;
     const quantity = document.getElementById("quantity").value;
 
     if (!file || !name || !description)
         return alert("Fill all fields.");
 
-    // Upload file
+    // Upload file → IPFS
     const fd = new FormData();
     fd.append("file", file);
     const upload = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd})).json();
 
-    // Metadata
+    // Metadata with TERMS
     const metadata = {
-        name, description, quantity,
+        name,
+        description,
+        terms,                 // <<<<<< ADDED
+        quantity,
         price_xrp: document.getElementById("priceXRP").value,
         price_rlusd: document.getElementById("priceRLUSD").value,
         image: "ipfs://" + upload.cid,
@@ -193,10 +200,16 @@ async function submitNFT() {
         creator_wallet: userWallet
     };
 
+    // Upload metadata.json
     const fd2 = new FormData();
-    fd2.append("file", new Blob([JSON.stringify(metadata)], {type:"application/json"}), "metadata.json");
+    fd2.append("file",
+        new Blob([JSON.stringify(metadata)], {type:"application/json"}),
+        "metadata.json"
+    );
+
     const md = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd2})).json();
 
+    // Submit to backend
     await fetch(BACKEND+"/api/submit", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -214,7 +227,7 @@ async function submitNFT() {
 }
 
 // -----------------------------
-// PAYMENT (uses backend route)
+// PAYMENT
 // -----------------------------
 async function payNow() {
     const r = await fetch(BACKEND + "/api/pay-xrp", { method:"POST" });
