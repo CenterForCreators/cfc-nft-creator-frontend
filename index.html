@@ -5,6 +5,9 @@
 <title>CFC NFT Creator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- XUMM SDK -->
+<script src="https://xumm.app/assets/cdn/xumm.min.js"></script>
+
 <style>
     body { margin:0; background:#000; font-family:Arial,sans-serif; }
     .outer { padding:40px 0; display:flex; justify-content:center; }
@@ -13,36 +16,24 @@
         background:#fff; padding:30px; border-radius:12px;
     }
     h1 { text-align:center; color:#000; margin-bottom:20px; }
-
     label { font-weight:bold; margin-top:15px; display:block; }
-
-    input, textarea, select {
+    input, textarea {
         width:100%; padding:12px; margin-top:6px;
         border:1px solid #ccc; border-radius:6px; font-size:16px;
     }
-
     button {
         width:100%; padding:15px; margin-top:25px;
         background:#111; color:#fff; border:none;
         border-radius:6px; font-size:18px; cursor:pointer;
     }
     button:hover { background:#333; }
-    .disabled { background:#777!important; cursor:not-allowed!important; }
-
+    .disabled { background:#666!important; cursor:not-allowed!important; }
     .info-box {
-        background:#f2f2f2; padding:15px;
-        margin-top:25px; border-radius:8px;
-        font-size:15px; line-height:1.5;
+        background:#f2f2f2; padding:15px; margin-top:25px;
+        border-radius:8px; font-size:15px; line-height:1.5;
     }
-
     .success {
-        background:#e6ffe6;
-        border-left:4px solid #2ca02c;
-        padding:10px; margin-top:20px;
-    }
-    .error {
-        background:#ffe6e6;
-        border-left:4px solid #cc0000;
+        background:#e6ffe6; border-left:4px solid #2ca02c;
         padding:10px; margin-top:20px;
     }
 </style>
@@ -59,44 +50,42 @@
 <button id="connectBtn" onclick="connectWallet()">Connect Xaman Wallet</button>
 <div id="walletBox" style="margin-top:15px;font-size:16px;"></div>
 
-<!-- NFT FORM -->
-<label>Upload File (Image, Video, or PDF)</label>
+<!-- FORM -->
+<label>Upload File (Image, Video, PDF)</label>
 <input type="file" id="fileInput">
 
 <label>NFT Name</label>
-<input type="text" id="nftName" placeholder="Example: Executive Strategy Session">
+<input type="text" id="nftName">
 
 <label>Description</label>
-<textarea id="nftDescription" rows="4" placeholder="Describe your NFT..."></textarea>
+<textarea id="nftDescription" rows="4"></textarea>
 
 <label>Quantity (1–100)</label>
-<input type="number" id="quantity" value="1" min="1" max="100">
+<input type="number" id="quantity" min="1" max="100" value="1">
 
 <label>Price (XRP)</label>
-<input type="number" id="priceXRP" value="10" min="1">
+<input type="number" id="priceXRP" value="10">
 
 <label>Price (RLUSD)</label>
-<input type="number" id="priceRLUSD" value="25" min="1">
+<input type="number" id="priceRLUSD" value="25">
 
-<label>Royalty (fixed)</label>
+<label>Royalty</label>
 <input type="text" value="5% (standard)" disabled>
 
 <button id="submitBtn" onclick="submitNFT()">Submit NFT for Approval</button>
 
-<!-- PAYMENT (locked until approved) -->
 <button id="payBtn" class="disabled" disabled>Pay & Mint NFT</button>
 
 <div id="result"></div>
 
 <div class="info-box">
 <strong>NFT Creation Process</strong><br><br>
-1️⃣ Connect your Xaman wallet.<br>
-2️⃣ Upload your file and enter NFT details.<br>
-3️⃣ Submit your NFT for approval (allow up to 24 hours).<br>
-4️⃣ After approval, reconnect your wallet.<br>
-5️⃣ Your payment button unlocks automatically.<br>
-6️⃣ After payment, your NFT is minted to your wallet.<br><br>
-Fields lock after approval to prevent changes. Royalty fixed at 5%.
+1️⃣ Connect your Xaman wallet<br>
+2️⃣ Upload file + fill out details<br>
+3️⃣ Submit NFT for approval (up to 24 hours)<br>
+4️⃣ After approval, reconnect wallet<br>
+5️⃣ Payment button unlocks<br>
+6️⃣ After payment, NFT mints to your wallet
 </div>
 
 </div>
@@ -104,158 +93,130 @@ Fields lock after approval to prevent changes. Royalty fixed at 5%.
 
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
+const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 
 let userWallet = "";
 let submissionId = null;
 let approved = false;
 
-// -------------------------------
-// CONNECT WALLET (Backend → Xumm)
-// -------------------------------
+// -----------------------------
+// XUMM CONNECT
+// -----------------------------
 async function connectWallet() {
-    const r = await fetch(BACKEND + "/api/wallet-connect", { method:"POST" });
-    const d = await r.json();
+    const popup = await xumm.authorize();
 
-    window.open(d.link, "_blank");
+    if (popup.me && popup.me.account) {
+        userWallet = popup.me.account;
 
-    pollSignIn(d.uuid);
+        document.getElementById("walletBox").innerHTML =
+            "Wallet: <strong>" + userWallet + "</strong>";
+
+        document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
+        document.getElementById("connectBtn").onclick = disconnectWallet;
+
+        checkApprovalStatus();
+    }
 }
 
-async function pollSignIn(uuid){
-    let timer = setInterval(async()=>{
-        const r = await fetch(BACKEND + "/api/check-signin/" + uuid);
-        const d = await r.json();
-
-        if(d.signed){
-            clearInterval(timer);
-
-            userWallet = d.account;
-
-            document.getElementById("walletBox").innerHTML =
-                "Connected Wallet: <strong>" + userWallet + "</strong>";
-
-            checkApprovalStatus();
-        }
-    }, 2000);
+// Disconnect XUMM session
+function disconnectWallet() {
+    xumm.logout();
+    userWallet = "";
+    document.getElementById("walletBox").innerHTML = "";
+    document.getElementById("connectBtn").innerHTML = "Connect Xaman Wallet";
+    document.getElementById("connectBtn").onclick = connectWallet;
 }
 
-// -------------------------------
-// CHECK IF NFT APPROVED
-// -------------------------------
-async function checkApprovalStatus(){
+// -----------------------------
+// CHECK APPROVAL STATUS
+// -----------------------------
+async function checkApprovalStatus() {
     const r = await fetch(BACKEND + "/api/admin/submissions?password=CFCBaby3!");
     const items = await r.json();
 
     const sub = items.find(x => x.creator_wallet === userWallet);
 
-    if(!sub) return;
+    if (!sub) return;
 
     submissionId = sub.id;
 
-    if(sub.status === "approved"){
+    if (sub.status === "approved") {
         approved = true;
         lockForm();
         enablePayment();
     }
 }
 
-// -------------------------------
-// LOCK FORM AFTER APPROVAL
-// -------------------------------
-function lockForm(){
-    [
-        "fileInput","nftName","nftDescription",
-        "quantity","priceXRP","priceRLUSD"
-    ].forEach(id => document.getElementById(id).disabled = true);
+// Lock form
+function lockForm() {
+    ["fileInput","nftName","nftDescription","quantity","priceXRP","priceRLUSD"]
+    .forEach(id => document.getElementById(id).disabled = true);
 
-    const btn = document.getElementById("submitBtn");
-    btn.classList.add("disabled");
-    btn.disabled = true;
+    document.getElementById("submitBtn").disabled = true;
+    document.getElementById("submitBtn").classList.add("disabled");
 }
 
-// -------------------------------
-// ENABLE PAYMENT BUTTON
-// -------------------------------
-function enablePayment(){
+// Enable payment
+function enablePayment() {
     const btn = document.getElementById("payBtn");
-    btn.classList.remove("disabled");
     btn.disabled = false;
-    btn.onclick = () => payNow();
+    btn.classList.remove("disabled");
+    btn.onclick = payNow;
 }
 
-// -------------------------------
-// SUBMIT NFT FOR APPROVAL
-// -------------------------------
-async function submitNFT(){
-    if(!userWallet){
-        alert("Connect your wallet first.");
-        return;
-    }
+// -----------------------------
+// SUBMIT FOR APPROVAL
+// -----------------------------
+async function submitNFT() {
+    if (!userWallet) return alert("Connect wallet first.");
 
     const file = document.getElementById("fileInput").files[0];
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
     const quantity = document.getElementById("quantity").value;
 
-    if(!file || !name || !description){
-        alert("Fill all fields.");
-        return;
-    }
+    if (!file || !name || !description)
+        return alert("Fill all fields.");
 
-    // Upload file → Pinata via backend
+    // Upload file
     const fd = new FormData();
     fd.append("file", file);
+    const upload = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd})).json();
 
-    const uploadRes = await fetch(BACKEND + "/api/upload", {
-        method:"POST",
-        body:fd
-    });
-    const upload = await uploadRes.json();
-    const imageCid = upload.cid;
-
-    // Upload metadata JSON
+    // Metadata
     const metadata = {
-        name,
-        description,
-        quantity,
+        name, description, quantity,
         price_xrp: document.getElementById("priceXRP").value,
         price_rlusd: document.getElementById("priceRLUSD").value,
-        image: "ipfs://" + imageCid,
+        image: "ipfs://" + upload.cid,
         royalty: "5%",
         creator_wallet: userWallet
     };
 
     const fd2 = new FormData();
-    fd2.append("file",
-        new Blob([JSON.stringify(metadata)], { type:"application/json" }),
-        "metadata.json"
-    );
+    fd2.append("file", new Blob([JSON.stringify(metadata)], {type:"application/json"}), "metadata.json");
+    const md = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd2})).json();
 
-    const mdRes = await fetch(BACKEND + "/api/upload", { method:"POST", body:fd2 });
-    const md = await mdRes.json();
-
-    // Submit to DB for approval
-    await fetch(BACKEND + "/api/submit", {
+    await fetch(BACKEND+"/api/submit", {
         method:"POST",
-        headers:{ "Content-Type":"application/json" },
+        headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
             wallet:userWallet,
-            name,
-            description,
-            imageCid,
+            name, description,
+            imageCid: upload.cid,
             metadataCid: md.cid,
             quantity
         })
     });
 
     document.getElementById("result").innerHTML =
-        `<div class="success">NFT submitted for approval. Please allow 24 hours.</div>`;
+        `<div class="success">NFT Submitted! Allow up to 24 hours for approval.</div>`;
 }
 
-// -------------------------------
-// PAYMENT
-// -------------------------------
-async function payNow(){
+// -----------------------------
+// PAYMENT (uses backend route)
+// -----------------------------
+async function payNow() {
     const r = await fetch(BACKEND + "/api/pay-xrp", { method:"POST" });
     const d = await r.json();
 
