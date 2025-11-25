@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>CFC Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+    body { font-family: Arial, sans-serif; background:#000; margin:0; padding:30px; }
+    .box { max-width: 900px; margin:auto; background:#fff; border-radius:12px; padding:30px; }
+    h1 { text-align:center; margin-bottom:25px; }
+    table { width:100%; border-collapse:collapse; margin-top:30px; font-size:15px; }
+    th, td { padding:12px; border-bottom:1px solid #ccc; }
+    th { background:#eee; text-align:left; font-weight:bold; }
+
+    .action-btn {
+        padding:6px 10px; border:none; border-radius:5px;
+        cursor:pointer; font-size:14px; margin-right:6px;
+    }
+    .approve { background:#28a745; color:white; }
+    .reject  { background:#dc3545; color:white; }
+    .mint    { background:#0066ff; color:white; }
+</style>
+</head>
+
+<body>
+<div class="box" id="adminPanel">
+    <h1>CFC NFT Creator — Admin Dashboard</h1>
+
+    <table id="subTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Wallet</th>
+                <th>Name</th>
+                <th>Qty</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
+const ADMIN_PASSWORD = "CFCBaby3!"; // Admin bypass since GoDaddy page is private
+
+// LOAD ALL SUBMISSIONS
+async function loadSubmissions() {
+    const res = await fetch(
+        BACKEND + "/api/admin/submissions?password=" + ADMIN_PASSWORD
+    );
+    const subs = await res.json();
+
+    const tbody = document.querySelector("#subTable tbody");
+    tbody.innerHTML = "";
+
+    subs.forEach(s => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${s.id}</td>
+            <td>${s.creator_wallet}</td>
+            <td>${s.name}</td>
+            <td>${s.batch_qty}</td>
+            <td style="font-weight:bold;">${s.status}</td>
+            <td>
+                ${
+                    s.status === "pending"
+                    ? `<button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                       <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>`
+                    : ""
+                }
+                ${
+                    s.status === "approved"
+                    ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
+                    : ""
+                }
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+// APPROVE
+async function approve(id) {
+    await fetch(BACKEND + "/api/admin/approve", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+    });
+    loadSubmissions();
+}
+
+// REJECT
+async function reject(id) {
+    await fetch(BACKEND + "/api/admin/reject", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+    });
+    loadSubmissions();
+}
+
+// MINT
+async function mint(id) {
+    alert("Minting will start. The creator must sign in with Xaman.");
+    await fetch(BACKEND + "/api/admin/mint", {
+        method: "POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+    });
+    loadSubmissions();
+}
+
+// LOAD ON START
+loadSubmissions();
+</script>
+
+</body>
+</html>
