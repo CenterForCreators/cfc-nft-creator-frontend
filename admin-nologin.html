@@ -2,28 +2,71 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CFC Admin Dashboard</title>
+<title>CFC Admin Dashboard (No Login)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-    body { font-family: Arial, sans-serif; background:#000; margin:0; padding:30px; }
-    .box { max-width: 900px; margin:auto; background:#fff; border-radius:12px; padding:30px; }
-    h1 { text-align:center; margin-bottom:25px; }
-    table { width:100%; border-collapse:collapse; margin-top:30px; font-size:15px; }
-    th, td { padding:12px; border-bottom:1px solid #ccc; }
-    th { background:#eee; text-align:left; font-weight:bold; }
+    body {
+        font-family: Arial, sans-serif;
+        background: #000;
+        margin: 0;
+        padding: 30px;
+    }
+
+    .box {
+        max-width: 1000px;
+        margin: auto;
+        background: #fff;
+        border-radius: 12px;
+        padding: 30px;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 30px;
+        font-size: 15px;
+    }
+
+    th, td {
+        padding: 12px;
+        border-bottom: 1px solid #ccc;
+        vertical-align: top;
+    }
+
+    th {
+        background: #eee;
+        text-align: left;
+        font-weight: bold;
+    }
 
     .action-btn {
-        padding:6px 10px; border:none; border-radius:5px;
-        cursor:pointer; font-size:14px; margin-right:6px;
+        padding: 6px 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-right: 6px;
     }
-    .approve { background:#28a745; color:white; }
-    .reject  { background:#dc3545; color:white; }
-    .mint    { background:#0066ff; color:white; }
+
+    .approve { background: #28a745; color: #fff; }
+    .reject  { background: #dc3545; color: #fff; }
+    .mint    { background: #0066ff; color: #fff; }
+
+    .preview-img {
+        max-width: 120px;
+        border-radius: 6px;
+    }
 </style>
 </head>
 
 <body>
+
 <div class="box" id="adminPanel">
     <h1>CFC NFT Creator — Admin Dashboard</h1>
 
@@ -31,9 +74,8 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Wallet</th>
-                <th>Name</th>
-                <th>Qty</th>
+                <th>Preview</th>
+                <th>Details</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -44,9 +86,15 @@
 
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
-const ADMIN_PASSWORD = "CFCBaby3!"; // Admin bypass since GoDaddy page is private
+// Hard-coded because the page itself is behind GoDaddy admin protection
+const ADMIN_PASSWORD = "CFCBaby3!";
 
-// LOAD ALL SUBMISSIONS
+// LOAD SUBMISSIONS ON PAGE LOAD
+window.addEventListener("load", loadSubmissions);
+
+// ---------------------------
+// LOAD SUBMISSIONS
+// ---------------------------
 async function loadSubmissions() {
     const res = await fetch(
         BACKEND + "/api/admin/submissions?password=" + ADMIN_PASSWORD
@@ -56,24 +104,63 @@ async function loadSubmissions() {
     const tbody = document.querySelector("#subTable tbody");
     tbody.innerHTML = "";
 
-    subs.forEach(s => {
+    for (const s of subs) {
+
+        // fetch metadata from IPFS
+        let metadata = {};
+        try {
+            const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
+            metadata = await mdRes.json();
+        } catch (e) {
+            metadata = { name: s.name, description: s.description };
+        }
+
+        let previewHTML = "";
+        const cid = s.image_cid;
+        const ipfsURL = "https://ipfs.io/ipfs/" + cid;
+
+        if (cid && cid.endsWith(".pdf")) {
+            previewHTML = `<a href="${ipfsURL}" target="_blank">📄 View PDF</a>`;
+        } else if (cid && cid.match(/\.(mp4|mov|webm)$/i)) {
+            previewHTML = `<video src="${ipfsURL}" width="120" controls></video>`;
+        } else if (cid) {
+            previewHTML = `<img src="${ipfsURL}" class="preview-img">`;
+        } else {
+            previewHTML = "No media";
+        }
+
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
             <td>${s.id}</td>
-            <td>${s.creator_wallet}</td>
-            <td>${s.name}</td>
-            <td>${s.batch_qty}</td>
-            <td style="font-weight:bold;">${s.status}</td>
+
+            <td>${previewHTML}</td>
+
             <td>
-                ${
-                    s.status === "pending"
-                    ? `<button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                       <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>`
+                <strong>Name:</strong> ${metadata.name || s.name} <br>
+                <strong>Description:</strong><br>
+                <div style="white-space:pre-line;margin-top:5px;">${metadata.description || s.description}</div>
+                <br>
+                <strong>Price XRP:</strong> ${metadata.price_xrp || "—"} <br>
+                <strong>Price RLUSD:</strong> ${metadata.price_rlusd || "—"} <br>
+                <strong>Quantity:</strong> ${s.batch_qty} <br>
+                <strong>Creator Wallet:</strong> ${s.creator_wallet} <br>
+                <strong>Metadata:</strong> <a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View Metadata</a> <br>
+                <strong>Image/Media CID:</strong> <a href="${ipfsURL}" target="_blank">${s.image_cid || "—"}</a> <br>
+                <strong>Created:</strong> ${s.created_at}
+            </td>
+
+            <td style="font-weight:bold;">${s.status}</td>
+
+            <td>
+                ${s.status === "pending"
+                    ? `
+                        <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                        <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+                      `
                     : ""
                 }
-                ${
-                    s.status === "approved"
+                ${s.status === "approved"
                     ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
                     : ""
                 }
@@ -81,10 +168,12 @@ async function loadSubmissions() {
         `;
 
         tbody.appendChild(tr);
-    });
+    }
 }
 
+// ---------------------------
 // APPROVE
+// ---------------------------
 async function approve(id) {
     await fetch(BACKEND + "/api/admin/approve", {
         method: "POST",
@@ -94,7 +183,9 @@ async function approve(id) {
     loadSubmissions();
 }
 
+// ---------------------------
 // REJECT
+// ---------------------------
 async function reject(id) {
     await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
@@ -104,19 +195,18 @@ async function reject(id) {
     loadSubmissions();
 }
 
+// ---------------------------
 // MINT
+// ---------------------------
 async function mint(id) {
-    alert("Minting will start. The creator must sign in with Xaman.");
+    alert("Minting started. Creator must sign in Xaman.");
     await fetch(BACKEND + "/api/admin/mint", {
         method: "POST",
-        headers:{ "Content-Type":"application/json" },
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
     loadSubmissions();
 }
-
-// LOAD ON START
-loadSubmissions();
 </script>
 
 </body>
