@@ -124,8 +124,8 @@ async function loadSubmissions() {
         }
 
         // Media preview
-        let previewHTML = "";
         const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
+        let previewHTML = "";
 
         if (s.image_cid.endsWith(".pdf")) {
             previewHTML = `<a href="${ipfsMediaURL}" target="_blank">📄 PDF</a>`;
@@ -210,14 +210,29 @@ async function reject(id) {
     loadSubmissions();
 }
 
+// ---------------------------
+// MINT WITH XUMM SIGN POPUP
+// ---------------------------
 async function mint(id) {
-    alert("Minting started. Creator must sign in Xaman.");
+    alert("Minting started. The creator must sign in Xaman.");
 
-    await fetch(BACKEND + "/api/admin/mint", {
+    const res = await fetch(BACKEND + "/api/admin/mint", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
+
+    const data = await res.json();
+
+    if (data.error) {
+        alert("Mint failed: " + data.error);
+        return;
+    }
+
+    if (data.sign_url) {
+        // 🔥 Automatically open Xaman signing request
+        window.open(data.sign_url, "_blank");
+    }
 
     loadSubmissions();
 }
