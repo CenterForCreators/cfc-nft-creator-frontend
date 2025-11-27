@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CFC Admin Dashboard (No Login)</title>
+<title>CFC Admin Dashboard (Auto Mint Enabled)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -57,19 +56,23 @@
 
     .approve { background: #28a745; color: #fff; }
     .reject  { background: #dc3545; color: #fff; }
-    .mint    { background: #0066ff; color: #fff; }
 
     .preview-img {
         max-width: 140px;
         border-radius: 6px;
     }
+
+    .paid { color:#007BFF; font-weight:bold; }
+    .minted { color:#28A745; font-weight:bold; }
+    .pending { color:#FFC107; font-weight:bold; }
+    .approved { color:#17A2B8; font-weight:bold; }
 </style>
 </head>
 
 <body>
 
 <div class="box">
-    <h1>CFC NFT Creator — Admin Dashboard (No Login)</h1>
+    <h1>CFC NFT Creator — Admin Dashboard</h1>
 
     <table id="subTable">
         <thead>
@@ -86,6 +89,8 @@
                 <th>Metadata</th>
                 <th>Media</th>
                 <th>Status</th>
+                <th>Payment</th>
+                <th>Mint</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -136,6 +141,19 @@ async function loadSubmissions() {
             previewHTML = `<img src="${ipfsMediaURL}" class="preview-img">`;
         }
 
+        // STATUS COLORS
+        const statusClass = s.status === "pending"
+            ? "pending"
+            : s.status === "approved"
+            ? "approved"
+            : "minted";
+
+        const paymentClass =
+            s.payment_status === "paid" ? "paid" : "pending";
+
+        const mintClass =
+            s.mint_status === "minted" ? "minted" : "pending";
+
         // Row
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -165,7 +183,15 @@ async function loadSubmissions() {
 
             <td><a href="${ipfsMediaURL}" target="_blank">${s.image_cid}</a></td>
 
-            <td style="font-weight:bold;">${s.status}</td>
+            <td class="${statusClass}">${s.status}</td>
+
+            <td class="${paymentClass}">
+                ${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}
+            </td>
+
+            <td class="${mintClass}">
+                ${s.mint_status === "minted" ? "Minted ✔" : "Pending"}
+            </td>
 
             <td>
                 ${
@@ -178,7 +204,12 @@ async function loadSubmissions() {
                 }
                 ${
                     s.status === "approved"
-                        ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
+                        ? `<span style="font-size:13px;color:#555;">Awaiting payment…</span>`
+                        : ""
+                }
+                ${
+                    s.payment_status === "paid" && s.mint_status !== "minted"
+                        ? `<span style="font-size:13px;color:#555;">Minting… (auto)</span>`
                         : ""
                 }
             </td>
@@ -207,33 +238,6 @@ async function reject(id) {
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
-    loadSubmissions();
-}
-
-// ---------------------------
-// MINT WITH XUMM SIGN POPUP
-// ---------------------------
-async function mint(id) {
-    alert("Minting started. The creator must sign in Xaman.");
-
-    const res = await fetch(BACKEND + "/api/admin/mint", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-        alert("Mint failed: " + data.error);
-        return;
-    }
-
-    if (data.sign_url) {
-        // 🔥 Automatically open Xaman signing request
-        window.open(data.sign_url, "_blank");
-    }
 
     loadSubmissions();
 }
