@@ -94,11 +94,8 @@
 
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
-const ADMIN_PASSWORD = "CFCBaby3!"; // No login—sent automatically
+const ADMIN_PASSWORD = "CFCBaby3!"; // No login
 
-// ---------------------------
-// LOAD ALL SUBMISSIONS
-// ---------------------------
 async function loadSubmissions() {
     const res = await fetch(
         BACKEND + "/api/admin/submissions?password=" + ADMIN_PASSWORD
@@ -110,20 +107,14 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
-        // Fetch metadata.json from IPFS
         let metadata = {};
         try {
             const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
             metadata = await mdRes.json();
-        } catch (err) {
-            metadata = { 
-                name: s.name, 
-                description: s.description,
-                terms: "—"
-            };
+        } catch {
+            metadata = { name: s.name, description: s.description };
         }
 
-        // Media preview
         const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
         let previewHTML = "";
 
@@ -135,50 +126,33 @@ async function loadSubmissions() {
             previewHTML = `<img src="${ipfsMediaURL}" class="preview-img">`;
         }
 
-        // Row
         const tr = document.createElement("tr");
+
         tr.innerHTML = `
             <td>${s.id}</td>
-
             <td>${previewHTML}</td>
-
             <td>${metadata.name || s.name}</td>
-
-            <td style="white-space:pre-line;">
-                ${metadata.description || s.description}
-            </td>
-
-            <td style="white-space:pre-line;">
-                ${metadata.terms || "—"}
-            </td>
-
+            <td style="white-space:pre-line;">${metadata.description || s.description}</td>
+            <td style="white-space:pre-line;">${metadata.terms || "—"}</td>
             <td>${s.batch_qty}</td>
-
             <td>${metadata.price_xrp || "—"}</td>
-
             <td>${metadata.price_rlusd || "—"}</td>
-
             <td>${s.creator_wallet}</td>
-
             <td><a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View</a></td>
-
             <td><a href="${ipfsMediaURL}" target="_blank">${s.image_cid}</a></td>
-
             <td style="font-weight:bold;">${s.status}</td>
 
             <td>
                 ${
                     s.status === "pending"
-                        ? `
-                           <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                           <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-                          `
-                        : ""
+                    ? `<button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                       <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>`
+                    : ""
                 }
                 ${
                     s.status === "approved"
-                        ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
-                        : ""
+                    ? `<button class="action-btn mint" onclick="mint(${s.id})">Mint</button>`
+                    : ""
                 }
             </td>
         `;
@@ -187,16 +161,12 @@ async function loadSubmissions() {
     }
 }
 
-// ---------------------------
-// ACTIONS
-// ---------------------------
 async function approve(id) {
     await fetch(BACKEND + "/api/admin/approve", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 
@@ -206,15 +176,14 @@ async function reject(id) {
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 
-// ---------------------------
-// MINT WITH XUMM SIGN POPUP
-// ---------------------------
+// --------------
+// MINT OPTION A 
+// --------------
 async function mint(id) {
-    alert("Minting started. The creator must sign in Xaman.");
+    alert("Minting started (server signs).");
 
     const res = await fetch(BACKEND + "/api/admin/mint", {
         method: "POST",
@@ -229,10 +198,7 @@ async function mint(id) {
         return;
     }
 
-    if (data.sign_url) {
-        // 🔥 Automatically open Xaman signing request
-        window.open(data.sign_url, "_blank");
-    }
+    alert("Minted! Tx Hash: " + data.hash);
 
     loadSubmissions();
 }
