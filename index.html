@@ -121,6 +121,39 @@ const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 let userWallet = "";
 
 // -----------------------------
+//  HELPER: CHECK PAYMENT AFTER RETURN
+// -----------------------------
+async function checkXummPaymentFromStorage() {
+    const uuid = localStorage.getItem("cfc_last_pay_uuid");
+    const submissionId = localStorage.getItem("cfc_last_pay_submission");
+
+    if (!uuid || !submissionId) return;
+
+    try {
+        const payload = await xumm.payload.get(uuid);
+
+        if (payload && payload.response && payload.response.signed === true) {
+            // Tell backend this submission is paid
+            await fetch(BACKEND + "/api/mark-paid", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: Number(submissionId) })
+            });
+
+            // Clear stored values
+            localStorage.removeItem("cfc_last_pay_uuid");
+            localStorage.removeItem("cfc_last_pay_submission");
+
+            // Refresh status panel
+            await loadStatus();
+        }
+    } catch (e) {
+        // If anything fails, just ignore silently (no breakage)
+        console.error("checkXummPaymentFromStorage error:", e);
+    }
+}
+
+// -----------------------------
 //  CONNECT WALLET
 // -----------------------------
 async function connectWallet() {
@@ -135,7 +168,9 @@ async function connectWallet() {
         document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
         document.getElementById("connectBtn").onclick = disconnectWallet;
 
-        loadStatus();
+        await loadStatus();
+        // After status loads, see if a recent payment was completed
+        await checkXummPaymentFromStorage();
     }
 }
 
@@ -241,7 +276,7 @@ async function submitNFT() {
     const md = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd2})).json();
 
     // Submit to backend
-    const submit = await fetch(BACKEND+"/api/submit", {
+    await fetch(BACKEND+"/api/submit", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
@@ -279,8 +314,25 @@ async function payNow(submissionId) {
     });
     const d = await r.json();
 
+    if (!d || !d.link || !d.uuid) {
+        console.error("Pay-XRP response missing uuid/link", d);
+        return;
+    }
+
+    // Store payment payload so we can check it after redirect
+    localStorage.setItem("cfc_last_pay_uuid", d.uuid);
+    localStorage.setItem("cfc_last_pay_submission", String(submissionId));
+
+    // Open Xumm signing
     window.open(d.link, "_blank");
 }
+
+// -----------------------------
+//  ON LOAD: TRY TO CHECK PAYMENT (IN CASE USER CAME BACK)
+// -----------------------------
+document.addEventListener("DOMContentLoaded", () => {
+    checkXummPaymentFromStorage();
+});
 </script>
 
 </body>
