@@ -37,7 +37,6 @@
         padding:10px; margin-top:20px;
     }
 
-    /* STATUS PANEL */
     .status-panel {
         margin-top:30px;
         border-top:2px solid #ddd;
@@ -121,39 +120,6 @@ const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 let userWallet = "";
 
 // -----------------------------
-//  HELPER: CHECK PAYMENT AFTER RETURN
-// -----------------------------
-async function checkXummPaymentFromStorage() {
-    const uuid = localStorage.getItem("cfc_last_pay_uuid");
-    const submissionId = localStorage.getItem("cfc_last_pay_submission");
-
-    if (!uuid || !submissionId) return;
-
-    try {
-        const payload = await xumm.payload.get(uuid);
-
-        if (payload && payload.response && payload.response.signed === true) {
-            // Tell backend this submission is paid
-            await fetch(BACKEND + "/api/mark-paid", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: Number(submissionId) })
-            });
-
-            // Clear stored values
-            localStorage.removeItem("cfc_last_pay_uuid");
-            localStorage.removeItem("cfc_last_pay_submission");
-
-            // Refresh status panel
-            await loadStatus();
-        }
-    } catch (e) {
-        // If anything fails, just ignore silently (no breakage)
-        console.error("checkXummPaymentFromStorage error:", e);
-    }
-}
-
-// -----------------------------
 //  CONNECT WALLET
 // -----------------------------
 async function connectWallet() {
@@ -168,9 +134,7 @@ async function connectWallet() {
         document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
         document.getElementById("connectBtn").onclick = disconnectWallet;
 
-        await loadStatus();
-        // After status loads, see if a recent payment was completed
-        await checkXummPaymentFromStorage();
+        loadStatus();
     }
 }
 
@@ -216,7 +180,6 @@ async function loadStatus() {
             <div>Metadata: <a href="https://ipfs.io/ipfs/${sub.metadata_cid}" target="_blank">View</a></div>
         `;
 
-        // Approved → show Pay button
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
             html += `
                 <button onclick="payNow(${sub.id})">
@@ -225,7 +188,6 @@ async function loadStatus() {
             `;
         }
 
-        // Minted
         if (sub.mint_status === "minted") {
             html += `<div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>`;
         }
@@ -249,12 +211,10 @@ async function submitNFT() {
     if (!file || !name || !description)
         return alert("Fill all required fields.");
 
-    // Upload file → IPFS
     const fd = new FormData();
     fd.append("file", file);
     const upload = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd})).json();
 
-    // Metadata
     const metadata = {
         name,
         description,
@@ -267,7 +227,6 @@ async function submitNFT() {
         creator_wallet: userWallet
     };
 
-    // Upload metadata.json
     const fd2 = new FormData();
     fd2.append("file",
         new Blob([JSON.stringify(metadata)], {type:"application/json"}),
@@ -275,7 +234,6 @@ async function submitNFT() {
     );
     const md = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd2})).json();
 
-    // Submit to backend
     await fetch(BACKEND+"/api/submit", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -291,7 +249,6 @@ async function submitNFT() {
     document.getElementById("result").innerHTML =
         `<div class="success">NFT Submitted! Allow up to 24 hours for approval.</div>`;
 
-    // Clear form so they can submit another NFT
     document.getElementById("fileInput").value = "";
     document.getElementById("nftName").value = "";
     document.getElementById("nftDescription").value = "";
@@ -319,20 +276,16 @@ async function payNow(submissionId) {
         return;
     }
 
-    // Store payment payload so we can check it after redirect
-    localStorage.setItem("cfc_last_pay_uuid", d.uuid);
-    localStorage.setItem("cfc_last_pay_submission", String(submissionId));
-
-    // Open Xumm signing
     window.open(d.link, "_blank");
 }
 
 // -----------------------------
-//  ON LOAD: TRY TO CHECK PAYMENT (IN CASE USER CAME BACK)
+//  POLLING: CHECK STATUS EVERY 5 SECONDS
 // -----------------------------
-document.addEventListener("DOMContentLoaded", () => {
-    checkXummPaymentFromStorage();
-});
+setInterval(() => {
+    if (userWallet) loadStatus();
+}, 5000);
+
 </script>
 
 </body>
