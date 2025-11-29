@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -57,7 +57,10 @@
     .approve { background: #28a745; color: #fff; }
     .reject  { background: #dc3545; color: #fff; }
 
-    .preview-img { max-width: 140px; border-radius: 6px; }
+    .preview-img {
+        max-width: 140px;
+        border-radius: 6px;
+    }
 
     .paid { color:#007BFF; font-weight:bold; }
     .minted { color:#28A745; font-weight:bold; }
@@ -112,14 +115,14 @@ async function loadSubmissions() {
     tbody.innerHTML = "";
 
     for (const s of subs) {
-        // Load metadata.json
+
         let metadata = {};
         try {
             const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
             metadata = await mdRes.json();
-        } catch {
-            metadata = {
-                name: s.name,
+        } catch (err) {
+            metadata = { 
+                name: s.name, 
                 description: s.description,
                 terms: "—"
             };
@@ -138,13 +141,11 @@ async function loadSubmissions() {
 
         const statusClass = 
             s.status === "pending" ? "pending" :
-            s.status === "approved" ? "approved" : "minted";
+            s.status === "approved" ? "approved" :
+            "minted";
 
-        const paymentClass =
-            s.payment_status === "paid" ? "paid" : "pending";
-
-        const mintClass =
-            s.mint_status === "minted" ? "minted" : "pending";
+        const paymentClass = s.payment_status === "paid" ? "paid" : "pending";
+        const mintClass = s.mint_status === "minted" ? "minted" : "pending";
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -159,26 +160,20 @@ async function loadSubmissions() {
             <td>${s.creator_wallet}</td>
             <td><a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View</a></td>
             <td><a href="${ipfsMediaURL}" target="_blank">${s.image_cid}</a></td>
-
             <td class="${statusClass}">${s.status}</td>
-            <td class="${paymentClass}">
-                ${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}
-            </td>
-            <td class="${mintClass}">
-                ${s.mint_status === "minted" ? "Minted ✔" : "Pending"}
-            </td>
-
+            <td class="${paymentClass}">${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}</td>
+            <td class="${mintClass}">${s.mint_status === "minted" ? "Minted ✔" : "Pending"}</td>
             <td>
                 ${
                     s.status === "pending"
                         ? `
                            <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                           <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+                           <button class="action-btn reject" onclick="rejectSub(${s.id})">Reject</button>
                           `
                         : ""
                 }
                 ${
-                    s.status === "approved" && s.payment_status === "unpaid"
+                    s.status === "approved"
                         ? `<span style="font-size:13px;color:#555;">Awaiting payment…</span>`
                         : ""
                 }
@@ -207,7 +202,7 @@ async function approve(id) {
     loadSubmissions();
 }
 
-async function reject(id) {
+async function rejectSub(id) {
     await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
@@ -217,12 +212,6 @@ async function reject(id) {
     loadSubmissions();
 }
 
-// ---------------------------
-// AUTO REFRESH EVERY 5 SECONDS
-// ---------------------------
-setInterval(loadSubmissions, 5000);
-
-// Initial load
 loadSubmissions();
 </script>
 
