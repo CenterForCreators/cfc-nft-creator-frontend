@@ -5,6 +5,7 @@
 <title>CFC NFT Creator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- XUMM SDK -->
 <script src="https://xumm.app/assets/cdn/xumm.min.js"></script>
 
 <style>
@@ -26,10 +27,17 @@
         border-radius:6px; font-size:18px; cursor:pointer;
     }
     button:hover { background:#333; }
+    .disabled { background:#666!important; cursor:not-allowed!important; }
+    .info-box {
+        background:#f2f2f2; padding:15px; margin-top:25px;
+        border-radius:8px; font-size:15px; line-height:1.5;
+    }
     .success {
         background:#e6ffe6; border-left:4px solid #2ca02c;
         padding:10px; margin-top:20px;
     }
+
+    /* STATUS PANEL */
     .status-panel {
         margin-top:30px;
         border-top:2px solid #ddd;
@@ -42,6 +50,7 @@
         margin-bottom:15px;
         border-left:5px solid #777;
     }
+    .status-title { font-weight:bold; margin-bottom:8px; }
     .pending { border-color:#FFC107; }
     .approved { border-color:#17A2B8; }
     .paid { border-color:#007BFF; }
@@ -56,11 +65,12 @@
 
 <h1>Create Your NFT</h1>
 
+<!-- CONNECT WALLET -->
 <button id="connectBtn" onclick="connectWallet()">Connect Xaman Wallet</button>
 <div id="walletBox" style="margin-top:15px;font-size:16px;"></div>
 
 <!-- FORM -->
-<label>Upload File</label>
+<label>Upload File (Image, Video, PDF)</label>
 <input type="file" id="fileInput">
 
 <label>NFT Name</label>
@@ -69,8 +79,8 @@
 <label>Description</label>
 <textarea id="nftDescription" rows="4"></textarea>
 
-<label>Terms</label>
-<textarea id="nftTerms" rows="4"></textarea>
+<label>Terms (Rules, conditions, usage rights)</label>
+<textarea id="nftTerms" rows="4" placeholder="Example: This NFT grants access to 1 coaching session, valid for 90 days..."></textarea>
 
 <label>Quantity (1–100)</label>
 <input type="number" id="quantity" min="1" max="100" value="1">
@@ -81,11 +91,26 @@
 <label>Price (RLUSD)</label>
 <input type="number" id="priceRLUSD" value="25">
 
+<label>Royalty</label>
+<input type="text" value="5% (standard)" disabled>
+
 <button id="submitBtn" onclick="submitNFT()">Submit NFT for Approval</button>
 
 <div id="result"></div>
 
-<div class="status-panel" id="statusPanel"></div>
+<div class="info-box">
+<strong>NFT Creation Process</strong><br><br>
+1️⃣ Connect your Xaman wallet<br>
+2️⃣ Upload file + fill out details<br>
+3️⃣ Submit NFT for approval (up to 24 hours)<br>
+4️⃣ After approval, pay the 5 XRP minting fee<br>
+5️⃣ You will be redirected back here<br>
+6️⃣ Mint will automatically launch in Xaman<br>
+7️⃣ Your NFT will appear under “Minted ✔”<br>
+</div>
+
+<!-- STATUS PANEL -->
+<div id="statusPanel" class="status-panel"></div>
 
 </div>
 </div>
@@ -96,20 +121,38 @@ const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 
 let userWallet = "";
 
-// ---------------------------------------
+// ----------------------------------
+// AUTO-DETECT PAYMENT AFTER RETURN
+// ----------------------------------
+async function checkReturnCID() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cid = urlParams.get("cid");
+
+    if (!cid) return;
+
+    if (cid.startsWith("PAYMENT_") || cid.startsWith("MINT_")) {
+        // Refresh UI to show new status
+        loadStatus();
+    }
+}
+
+// ----------------------------------
 // CONNECT WALLET
-// ---------------------------------------
+// ----------------------------------
 async function connectWallet() {
-    const auth = await xumm.authorize();
-    if (auth?.me?.account) {
-        userWallet = auth.me.account;
+    const popup = await xumm.authorize();
+
+    if (popup.me && popup.me.account) {
+        userWallet = popup.me.account;
+
         document.getElementById("walletBox").innerHTML =
             "Wallet: <strong>" + userWallet + "</strong>";
 
         document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
         document.getElementById("connectBtn").onclick = disconnectWallet;
 
-        loadStatus();
+        await loadStatus();
+        await checkReturnCID();
     }
 }
 
@@ -122,50 +165,48 @@ function disconnectWallet() {
     document.getElementById("statusPanel").innerHTML = "";
 }
 
-// ---------------------------------------
-// LOAD STATUS (CREATOR'S NFTs)
-// ---------------------------------------
+// ----------------------------------
+// LOAD STATUS
+// ----------------------------------
 async function loadStatus() {
     if (!userWallet) return;
 
-    const r = await fetch(BACKEND + "/api/submissions/by-wallet?wallet=" + userWallet);
+    const r = await fetch(BACKEND + "/api/admin/submissions?password=CFCBaby3!");
     const items = await r.json();
+
+    const mine = items.filter(x => x.creator_wallet === userWallet);
 
     let html = "<h2>My Submissions</h2>";
 
-    if (!items.length) {
-        html += "<p>No submissions yet.</p>";
+    if (mine.length === 0) {
+        html += "<p>You have no submissions yet.</p>";
         document.getElementById("statusPanel").innerHTML = html;
         return;
     }
 
-    items.forEach(sub => {
-        let cls = sub.status;
-
-        if (sub.payment_status === "paid" && sub.mint_status === "pending")
-            cls = "paid";
-
-        if (sub.mint_status === "minted")
-            cls = "minted";
+    mine.forEach(sub => {
+        let cls = "pending";
+        if (sub.status === "approved" && sub.payment_status === "unpaid") cls = "approved";
+        if (sub.payment_status === "paid" && sub.mint_status === "pending") cls = "paid";
+        if (sub.mint_status === "minted") cls = "minted";
 
         html += `
         <div class="status-card ${cls}">
-            <div><strong>${sub.name}</strong></div>
-            <div>Status: ${cls.toUpperCase()}</div>
+            <div class="status-title">${sub.name}</div>
+            <div>Status: <strong>${cls.toUpperCase()}</strong></div>
             <div>Qty: ${sub.batch_qty}</div>
             <div>Metadata: <a href="https://ipfs.io/ipfs/${sub.metadata_cid}" target="_blank">View</a></div>
         `;
 
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
-            html += `<button onclick="payNow(${sub.id})">Pay 5 XRP Mint Fee</button>`;
-        }
-
-        if (sub.payment_status === "paid" && sub.mint_status === "pending") {
-            html += `<div>Waiting for mint…</div>`;
+            html += `
+            <button onclick="payNow(${sub.id})">
+                Pay 5 XRP Mint Fee
+            </button>`;
         }
 
         if (sub.mint_status === "minted") {
-            html += `<div style="color:#28A745;font-weight:bold;">Minted ✔</div>`;
+            html += `<div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>`;
         }
 
         html += `</div>`;
@@ -174,26 +215,28 @@ async function loadStatus() {
     document.getElementById("statusPanel").innerHTML = html;
 }
 
-// ---------------------------------------
-// UPLOAD + SUBMIT NFT
-// ---------------------------------------
+// ----------------------------------
+// SUBMIT NFT
+// ----------------------------------
 async function submitNFT() {
-    if (!userWallet) return alert("Connect wallet first.");
+    if (!userWallet) return alert("Please connect your wallet.");
 
     const file = document.getElementById("fileInput").files[0];
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
 
     if (!file || !name || !description)
-        return alert("Missing fields.");
+        return alert("Fill all required fields.");
 
-    // Upload media
+    // Upload file → IPFS
     const fd = new FormData();
     fd.append("file", file);
-    const upload = await (await fetch(BACKEND + "/api/upload", {method:"POST", body:fd})).json();
+    const upload = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd})).json();
 
+    // Metadata
     const metadata = {
-        name, description,
+        name,
+        description,
         terms: document.getElementById("nftTerms").value,
         quantity: document.getElementById("quantity").value,
         price_xrp: document.getElementById("priceXRP").value,
@@ -205,18 +248,19 @@ async function submitNFT() {
 
     // Upload metadata.json
     const fd2 = new FormData();
-    fd2.append("file",
-        new Blob([JSON.stringify(metadata)], {type:"application/json"}),
+    fd2.append(
+        "file",
+        new Blob([JSON.stringify(metadata)], { type: "application/json" }),
         "metadata.json"
     );
-    const md = await (await fetch(BACKEND + "/api/upload", {method:"POST", body:fd2})).json();
+    const md = await (await fetch(BACKEND+"/api/upload", {method:"POST", body:fd2})).json();
 
-    // Submit NFT request
+    // Submit to backend
     await fetch(BACKEND + "/api/submit", {
         method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-            wallet: userWallet,
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            wallet:userWallet,
             name, description,
             imageCid: upload.cid,
             metadataCid: md.cid,
@@ -225,24 +269,37 @@ async function submitNFT() {
     });
 
     document.getElementById("result").innerHTML =
-        `<div class="success">NFT submitted! Await admin approval.</div>`;
+        `<div class="success">NFT Submitted! Allow up to 24 hours for approval.</div>`;
 
     loadStatus();
 }
 
-// ---------------------------------------
-// PAY MINT FEE (Xumm popup)
-// ---------------------------------------
-async function payNow(id) {
+// ----------------------------------
+// PAY MINT FEE
+// ----------------------------------
+async function payNow(submissionId) {
     const r = await fetch(BACKEND + "/api/pay-xrp", {
         method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ submissionId: id })
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ submissionId })
     });
 
     const d = await r.json();
-    if (d?.link) window.open(d.link, "_blank");
+
+    if (!d.link) {
+        alert("Error creating payment.");
+        return;
+    }
+
+    window.location.href = d.link;
 }
+
+// ----------------------------------
+// ON LOAD
+// ----------------------------------
+document.addEventListener("DOMContentLoaded", () => {
+    checkReturnCID();
+});
 </script>
 
 </body>
