@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -57,10 +57,7 @@
     .approve { background: #28a745; color: #fff; }
     .reject  { background: #dc3545; color: #fff; }
 
-    .preview-img {
-        max-width: 140px;
-        border-radius: 6px;
-    }
+    .preview-img { max-width: 140px; border-radius: 6px; }
 
     .paid { color:#007BFF; font-weight:bold; }
     .minted { color:#28A745; font-weight:bold; }
@@ -100,7 +97,7 @@
 
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
-const ADMIN_PASSWORD = "CFCBaby3!"; // No login—sent automatically
+const ADMIN_PASSWORD = "CFCBaby3!";
 
 // ---------------------------
 // LOAD ALL SUBMISSIONS
@@ -115,21 +112,19 @@ async function loadSubmissions() {
     tbody.innerHTML = "";
 
     for (const s of subs) {
-
-        // Fetch metadata.json from IPFS
+        // Load metadata.json
         let metadata = {};
         try {
             const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
             metadata = await mdRes.json();
-        } catch (err) {
-            metadata = { 
-                name: s.name, 
+        } catch {
+            metadata = {
+                name: s.name,
                 description: s.description,
                 terms: "—"
             };
         }
 
-        // Media preview
         const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
         let previewHTML = "";
 
@@ -141,12 +136,9 @@ async function loadSubmissions() {
             previewHTML = `<img src="${ipfsMediaURL}" class="preview-img">`;
         }
 
-        // STATUS COLORS
-        const statusClass = s.status === "pending"
-            ? "pending"
-            : s.status === "approved"
-            ? "approved"
-            : "minted";
+        const statusClass = 
+            s.status === "pending" ? "pending" :
+            s.status === "approved" ? "approved" : "minted";
 
         const paymentClass =
             s.payment_status === "paid" ? "paid" : "pending";
@@ -154,41 +146,24 @@ async function loadSubmissions() {
         const mintClass =
             s.mint_status === "minted" ? "minted" : "pending";
 
-        // Row
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${s.id}</td>
-
             <td>${previewHTML}</td>
-
             <td>${metadata.name || s.name}</td>
-
-            <td style="white-space:pre-line;">
-                ${metadata.description || s.description}
-            </td>
-
-            <td style="white-space:pre-line;">
-                ${metadata.terms || "—"}
-            </td>
-
+            <td style="white-space:pre-line;">${metadata.description || s.description}</td>
+            <td style="white-space:pre-line;">${metadata.terms || "—"}</td>
             <td>${s.batch_qty}</td>
-
             <td>${metadata.price_xrp || "—"}</td>
-
             <td>${metadata.price_rlusd || "—"}</td>
-
             <td>${s.creator_wallet}</td>
-
             <td><a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View</a></td>
-
             <td><a href="${ipfsMediaURL}" target="_blank">${s.image_cid}</a></td>
 
             <td class="${statusClass}">${s.status}</td>
-
             <td class="${paymentClass}">
                 ${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}
             </td>
-
             <td class="${mintClass}">
                 ${s.mint_status === "minted" ? "Minted ✔" : "Pending"}
             </td>
@@ -203,7 +178,7 @@ async function loadSubmissions() {
                         : ""
                 }
                 ${
-                    s.status === "approved"
+                    s.status === "approved" && s.payment_status === "unpaid"
                         ? `<span style="font-size:13px;color:#555;">Awaiting payment…</span>`
                         : ""
                 }
@@ -242,6 +217,12 @@ async function reject(id) {
     loadSubmissions();
 }
 
+// ---------------------------
+// AUTO REFRESH EVERY 5 SECONDS
+// ---------------------------
+setInterval(loadSubmissions, 5000);
+
+// Initial load
 loadSubmissions();
 </script>
 
