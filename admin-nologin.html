@@ -1,8 +1,8 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CFC Admin Dashboard (Auto Mint Enabled)</title>
+<title>CFC Admin Dashboard (Auto Mint Flow)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -62,10 +62,10 @@
         border-radius: 6px;
     }
 
-    .paid { color:#007BFF; font-weight:bold; }
-    .minted { color:#28A745; font-weight:bold; }
     .pending { color:#FFC107; font-weight:bold; }
     .approved { color:#17A2B8; font-weight:bold; }
+    .paid { color:#007BFF; font-weight:bold; }
+    .minted { color:#28A745; font-weight:bold; }
 </style>
 </head>
 
@@ -116,41 +116,52 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
+        // Fetch metadata.json
         let metadata = {};
         try {
-            const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
-            metadata = await mdRes.json();
-        } catch (err) {
-            metadata = { 
-                name: s.name, 
+            const md = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
+            metadata = await md.json();
+        } catch (e) {
+            metadata = {
+                name: s.name,
                 description: s.description,
                 terms: "—"
             };
         }
 
-        const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
-        let previewHTML = "";
+        // Media preview
+        const mediaUrl = "https://ipfs.io/ipfs/" + s.image_cid;
+        let preview = "";
 
         if (s.image_cid.endsWith(".pdf")) {
-            previewHTML = `<a href="${ipfsMediaURL}" target="_blank">📄 PDF</a>`;
+            preview = `<a href="${mediaUrl}" target="_blank">📄 PDF</a>`;
         } else if (s.image_cid.match(/\.(mp4|mov|webm)$/i)) {
-            previewHTML = `<video src="${ipfsMediaURL}" width="140" controls></video>`;
+            preview = `<video src="${mediaUrl}" width="140" controls></video>`;
         } else {
-            previewHTML = `<img src="${ipfsMediaURL}" class="preview-img">`;
+            preview = `<img src="${mediaUrl}" class="preview-img">`;
         }
 
-        const statusClass = 
-            s.status === "pending" ? "pending" :
-            s.status === "approved" ? "approved" :
-            "minted";
+        // Status coloring
+        const statusClass =
+            s.status === "pending"
+                ? "pending"
+                : s.status === "approved"
+                ? "approved"
+                : s.mint_status === "minted"
+                ? "minted"
+                : "pending";
 
-        const paymentClass = s.payment_status === "paid" ? "paid" : "pending";
-        const mintClass = s.mint_status === "minted" ? "minted" : "pending";
+        const paymentClass =
+            s.payment_status === "paid" ? "paid" : "pending";
 
+        const mintClass =
+            s.mint_status === "minted" ? "minted" : "pending";
+
+        // Build row
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${s.id}</td>
-            <td>${previewHTML}</td>
+            <td>${preview}</td>
             <td>${metadata.name || s.name}</td>
             <td style="white-space:pre-line;">${metadata.description || s.description}</td>
             <td style="white-space:pre-line;">${metadata.terms || "—"}</td>
@@ -159,21 +170,29 @@ async function loadSubmissions() {
             <td>${metadata.price_rlusd || "—"}</td>
             <td>${s.creator_wallet}</td>
             <td><a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View</a></td>
-            <td><a href="${ipfsMediaURL}" target="_blank">${s.image_cid}</a></td>
+            <td><a href="${mediaUrl}" target="_blank">${s.image_cid}</a></td>
+
             <td class="${statusClass}">${s.status}</td>
-            <td class="${paymentClass}">${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}</td>
-            <td class="${mintClass}">${s.mint_status === "minted" ? "Minted ✔" : "Pending"}</td>
+
+            <td class="${paymentClass}">
+                ${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}
+            </td>
+
+            <td class="${mintClass}">
+                ${s.mint_status === "minted" ? "Minted ✔" : "Pending"}
+            </td>
+
             <td>
                 ${
                     s.status === "pending"
                         ? `
                            <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                           <button class="action-btn reject" onclick="rejectSub(${s.id})">Reject</button>
+                           <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
                           `
                         : ""
                 }
                 ${
-                    s.status === "approved"
+                    s.status === "approved" && s.payment_status === "unpaid"
                         ? `<span style="font-size:13px;color:#555;">Awaiting payment…</span>`
                         : ""
                 }
@@ -190,28 +209,29 @@ async function loadSubmissions() {
 }
 
 // ---------------------------
-// ACTIONS
+// ADMIN ACTIONS
 // ---------------------------
 async function approve(id) {
     await fetch(BACKEND + "/api/admin/approve", {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
 
     loadSubmissions();
 }
 
-async function rejectSub(id) {
+async function reject(id) {
     await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
 
     loadSubmissions();
 }
 
+// Initial load
 loadSubmissions();
 </script>
 
