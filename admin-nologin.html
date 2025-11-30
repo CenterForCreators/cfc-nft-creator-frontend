@@ -112,17 +112,12 @@ async function loadSubmissions() {
     tbody.innerHTML = "";
 
     for (const s of subs) {
-        // Load metadata.json
         let metadata = {};
         try {
             const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
             metadata = await mdRes.json();
         } catch {
-            metadata = {
-                name: s.name,
-                description: s.description,
-                terms: "—"
-            };
+            metadata = { name: s.name, description: s.description, terms: "—" };
         }
 
         const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
@@ -136,7 +131,7 @@ async function loadSubmissions() {
             previewHTML = `<img src="${ipfsMediaURL}" class="preview-img">`;
         }
 
-        const statusClass = 
+        const statusClass =
             s.status === "pending" ? "pending" :
             s.status === "approved" ? "approved" : "minted";
 
@@ -203,7 +198,6 @@ async function approve(id) {
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 
@@ -213,14 +207,17 @@ async function reject(id) {
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
     });
-
     loadSubmissions();
 }
 
 // ---------------------------
-// INITIAL LOAD (NO AUTO REFRESH)
+// INITIAL LOAD
 // ---------------------------
 loadSubmissions();
+
+/* ⭐ ONLY FIX ADDED — auto-refresh mint status */
+setInterval(loadSubmissions, 5000);
+
 </script>
 
 </body>
