@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -116,20 +116,18 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
-        // Fetch metadata.json from IPFS
         let metadata = {};
         try {
             const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
             metadata = await mdRes.json();
         } catch (err) {
-            metadata = {
-                name: s.name,
+            metadata = { 
+                name: s.name, 
                 description: s.description,
                 terms: "—"
             };
         }
 
-        // Media preview
         const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
         let previewHTML = "";
 
@@ -141,11 +139,11 @@ async function loadSubmissions() {
             previewHTML = `<img src="${ipfsMediaURL}" class="preview-img">`;
         }
 
-        // STATUS COLORS
-        const statusClass =
-            s.status === "pending" ? "pending" :
-            s.status === "approved" ? "approved" :
-            s.mint_status === "minted" ? "minted" : "pending";
+        const statusClass = s.status === "pending"
+            ? "pending"
+            : s.status === "approved"
+            ? "approved"
+            : "minted";
 
         const paymentClass =
             s.payment_status === "paid" ? "paid" : "pending";
@@ -153,7 +151,6 @@ async function loadSubmissions() {
         const mintClass =
             s.mint_status === "minted" ? "minted" : "pending";
 
-        // Row
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${s.id}</td>
@@ -208,7 +205,7 @@ async function loadSubmissions() {
                 }
                 ${
                     s.payment_status === "paid" && s.mint_status !== "minted"
-                        ? `<span style="font-size:13px;color:#555;">Minting…</span>`
+                        ? `<span style="font-size:13px;color:#555;">Minting… (auto)</span>`
                         : ""
                 }
             </td>
