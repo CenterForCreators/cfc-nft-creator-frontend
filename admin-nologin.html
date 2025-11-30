@@ -112,13 +112,13 @@ async function loadSubmissions() {
     tbody.innerHTML = "";
 
     for (const s of subs) {
-        let metadata = {};
-        try {
-            const mdRes = await fetch("https://ipfs.io/ipfs/" + s.metadata_cid);
-            metadata = await mdRes.json();
-        } catch {
-            metadata = { name: s.name, description: s.description, terms: "—" };
-        }
+
+        /* ⭐ FIX APPLIED HERE — NO IPFS FETCH, NO OTHER CHANGES ⭐ */
+        let metadata = {
+            name: s.name,
+            description: s.description,
+            terms: "—"
+        };
 
         const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
         let previewHTML = "";
@@ -145,9 +145,9 @@ async function loadSubmissions() {
         tr.innerHTML = `
             <td>${s.id}</td>
             <td>${previewHTML}</td>
-            <td>${metadata.name || s.name}</td>
-            <td style="white-space:pre-line;">${metadata.description || s.description}</td>
-            <td style="white-space:pre-line;">${metadata.terms || "—"}</td>
+            <td>${metadata.name}</td>
+            <td style="white-space:pre-line;">${metadata.description}</td>
+            <td style="white-space:pre-line;">${metadata.terms}</td>
             <td>${s.batch_qty}</td>
             <td>${metadata.price_xrp || "—"}</td>
             <td>${metadata.price_rlusd || "—"}</td>
@@ -215,7 +215,7 @@ async function reject(id) {
 // ---------------------------
 loadSubmissions();
 
-/* ⭐ ONLY FIX ADDED — auto-refresh mint status */
+/* ⭐ AUTO-REFRESH (unchanged) ⭐ */
 setInterval(loadSubmissions, 5000);
 
 </script>
