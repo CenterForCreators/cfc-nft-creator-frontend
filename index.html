@@ -257,7 +257,6 @@ async function loadStatus() {
             <div>Metadata: <a href="https://ipfs.io/ipfs/${sub.metadata_cid}" target="_blank">View</a></div>
         `;
 
-        // Approved → Pay button
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
             html += `
                 <button onclick="payNow(${sub.id})">
@@ -266,7 +265,6 @@ async function loadStatus() {
             `;
         }
 
-        // Mint button
         if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
             html += `
                 <button onclick="mintNow(${sub.id})">
@@ -275,7 +273,6 @@ async function loadStatus() {
             `;
         }
 
-        // Minted
         if (sub.mint_status === "minted") {
             html += `<div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>`;
         }
@@ -310,7 +307,7 @@ async function submitNFT() {
         quantity: document.getElementById("quantity").value,
         price_xrp: document.getElementById("priceXRP").value,
         price_rlusd: document.getElementById("priceRLUSD").value,
-        image: "ipfs://"_SKIP_
+        image: "ipfs://" + upload.cid,
     };
 
     const fd2 = new FormData();
@@ -379,7 +376,6 @@ async function mintNow(id) {
     });
     const d = await r.json();
 
-    // ⭐ ADDED EXACTLY AS REQUESTED — ONLY THIS LINE ⭐
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
 
     if (d.link) {
