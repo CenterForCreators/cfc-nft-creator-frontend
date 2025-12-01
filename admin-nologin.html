@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -119,17 +119,21 @@ async function loadSubmissions() {
             terms: "—"
         };
 
-        /* ✅ REPLACED GATEWAY */
-        const ipfsMediaURL = "https://cloudflare-ipfs.com/ipfs/" + s.image_cid;
+        /* 
+        ✅ FIX: use a reliable IPFS gateway 
+        (same as Creator page)
+        */
+        const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
+        const metadataURL = "https://gateway.pinata.cloud/ipfs/" + s.metadata_cid;
 
         let previewHTML = "";
 
         if (s.image_cid.endsWith(".pdf")) {
-            previewHTML = `<a href="${ipfsMediaURL}" target="_blank">📄 PDF</a>`;
+            previewHTML = `<a href="${mediaURL}" target="_blank">📄 PDF</a>`;
         } else if (s.image_cid.match(/\.(mp4|mov|webm)$/i)) {
-            previewHTML = `<video src="${ipfsMediaURL}" width="140" controls></video>`;
+            previewHTML = `<video src="${mediaURL}" width="140" controls></video>`;
         } else {
-            previewHTML = `<img src="${ipfsMediaURL}" class="preview-img">`;
+            previewHTML = `<img src="${mediaURL}" class="preview-img">`;
         }
 
         const statusClass =
@@ -154,10 +158,10 @@ async function loadSubmissions() {
             <td>${metadata.price_rlusd || "—"}</td>
             <td>${s.creator_wallet}</td>
 
-            <!-- ✅ ALSO SWITCHED METADATA GATEWAY -->
-            <td><a href="https://cloudflare-ipfs.com/ipfs/${s.metadata_cid}" target="_blank">View</a></td>
+            <!-- ✅ FIXED METADATA LINK -->
+            <td><a href="${metadataURL}" target="_blank">View</a></td>
 
-            <td><a href="${ipfsMediaURL}" target="_blank">${s.image_cid}</a></td>
+            <td><a href="${mediaURL}" target="_blank">${s.image_cid}</a></td>
 
             <td class="${statusClass}">${s.status}</td>
             <td class="${paymentClass}">
