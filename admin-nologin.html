@@ -113,14 +113,15 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
-        /* ⭐ FIX APPLIED HERE — NO IPFS FETCH, NO OTHER CHANGES ⭐ */
         let metadata = {
             name: s.name,
             description: s.description,
             terms: "—"
         };
 
-        const ipfsMediaURL = "https://ipfs.io/ipfs/" + s.image_cid;
+        /* ✅ REPLACED GATEWAY */
+        const ipfsMediaURL = "https://cloudflare-ipfs.com/ipfs/" + s.image_cid;
+
         let previewHTML = "";
 
         if (s.image_cid.endsWith(".pdf")) {
@@ -152,7 +153,10 @@ async function loadSubmissions() {
             <td>${metadata.price_xrp || "—"}</td>
             <td>${metadata.price_rlusd || "—"}</td>
             <td>${s.creator_wallet}</td>
-            <td><a href="https://ipfs.io/ipfs/${s.metadata_cid}" target="_blank">View</a></td>
+
+            <!-- ✅ ALSO SWITCHED METADATA GATEWAY -->
+            <td><a href="https://cloudflare-ipfs.com/ipfs/${s.metadata_cid}" target="_blank">View</a></td>
+
             <td><a href="${ipfsMediaURL}" target="_blank">${s.image_cid}</a></td>
 
             <td class="${statusClass}">${s.status}</td>
@@ -214,8 +218,6 @@ async function reject(id) {
 // INITIAL LOAD
 // ---------------------------
 loadSubmissions();
-
-/* ⭐ AUTO-REFRESH (unchanged) ⭐ */
 setInterval(loadSubmissions, 5000);
 
 </script>
