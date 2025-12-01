@@ -99,6 +99,19 @@
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
 const ADMIN_PASSWORD = "CFCBaby3!";
 
+/* ----------------------------------------------------
+   NEW: fetch metadata JSON reliably (safe, no changes)
+---------------------------------------------------- */
+async function fetchMetadata(cid) {
+    try {
+        const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
+        return await r.json();
+    } catch (e) {
+        console.error("Metadata fetch failed:", e);
+        return null;
+    }
+}
+
 // ---------------------------
 // LOAD ALL SUBMISSIONS
 // ---------------------------
@@ -113,16 +126,17 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
+        /* 🔥 NEW: load metadata fields properly */
+        const md = await fetchMetadata(s.metadata_cid);
+
         let metadata = {
-            name: s.name,
-            description: s.description,
-            terms: "—"
+            name: md?.name || s.name,
+            description: md?.description || s.description,
+            terms: md?.terms || "—",
+            price_xrp: md?.price_xrp || "—",
+            price_rlusd: md?.price_rlusd || "—"
         };
 
-        /* 
-        ✅ FIX: use a reliable IPFS gateway 
-        (same as Creator page)
-        */
         const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
         const metadataURL = "https://gateway.pinata.cloud/ipfs/" + s.metadata_cid;
 
@@ -150,23 +164,30 @@ async function loadSubmissions() {
         tr.innerHTML = `
             <td>${s.id}</td>
             <td>${previewHTML}</td>
+
             <td>${metadata.name}</td>
             <td style="white-space:pre-line;">${metadata.description}</td>
             <td style="white-space:pre-line;">${metadata.terms}</td>
+
             <td>${s.batch_qty}</td>
-            <td>${metadata.price_xrp || "—"}</td>
-            <td>${metadata.price_rlusd || "—"}</td>
+
+            <!-- 🔥 FIXED: real prices -->
+            <td>${metadata.price_xrp}</td>
+            <td>${metadata.price_rlusd}</td>
+
             <td>${s.creator_wallet}</td>
 
-            <!-- ✅ FIXED METADATA LINK -->
+            <!-- FIXED METADATA LINK -->
             <td><a href="${metadataURL}" target="_blank">View</a></td>
 
             <td><a href="${mediaURL}" target="_blank">${s.image_cid}</a></td>
 
             <td class="${statusClass}">${s.status}</td>
+
             <td class="${paymentClass}">
                 ${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}
             </td>
+
             <td class="${mintClass}">
                 ${s.mint_status === "minted" ? "Minted ✔" : "Pending"}
             </td>
