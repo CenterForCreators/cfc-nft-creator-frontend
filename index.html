@@ -111,7 +111,7 @@
 <!-- STATUS PANEL -->
 <div id="statusPanel" class="status-panel"></div>
 
-<!-- ✅ ADDED: Minted NFTs Gallery -->
+<!-- Minted NFTs Gallery -->
 <h2 style="margin-top:40px;">My Minted NFTs</h2>
 <div id="mintedGallery"></div>
 
@@ -125,14 +125,14 @@ const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 let userWallet = "";
 
 // -----------------------------
-//  HELPERS: LOCAL STORAGE KEYS
+// LOCAL STORAGE KEYS
 // -----------------------------
 const PAY_UUID_KEY = "cfc_last_pay_uuid";
 const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
 // -----------------------------
-//  CHECK PAYMENT AFTER RETURN
+// PAYMENT CHECK AFTER RETURN
 // -----------------------------
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
@@ -170,7 +170,7 @@ async function checkXummPaymentFromStorage() {
 }
 
 // -----------------------------
-//  CHECK MINT AFTER RETURN
+// MINT CHECK AFTER RETURN
 // -----------------------------
 async function checkXummMintFromStorage() {
     const mintUuid = localStorage.getItem(MINT_UUID_KEY);
@@ -199,7 +199,7 @@ async function checkXummMintFromStorage() {
 }
 
 // -----------------------------
-//  CONNECT WALLET
+// CONNECT WALLET
 // -----------------------------
 async function connectWallet() {
     const popup = await xumm.authorize();
@@ -229,7 +229,7 @@ function disconnectWallet() {
 }
 
 // -----------------------------
-//  LOAD STATUS PANEL
+// LOAD STATUS PANEL
 // -----------------------------
 async function loadStatus() {
     if (!userWallet) return;
@@ -258,7 +258,11 @@ async function loadStatus() {
             <div class="status-title">${sub.name}</div>
             <div>Status: <strong>${cls.toUpperCase()}</strong></div>
             <div>Qty: ${sub.batch_qty}</div>
-            <div>Metadata: <a href="https://ipfs.io/ipfs/${sub.metadata_cid}" target="_blank">View</a></div>
+
+            <!-- Metadata link changed -->
+            <div>Metadata: 
+                <a href="https://cloudflare-ipfs.com/ipfs/${sub.metadata_cid}" target="_blank">View</a>
+            </div>
         `;
 
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
@@ -286,12 +290,11 @@ async function loadStatus() {
 
     document.getElementById("statusPanel").innerHTML = html;
 
-    /* ✅ ADDED: refresh minted gallery */
     await loadMintedGallery();
 }
 
 // -----------------------------
-//  SUBMIT NFT
+// SUBMIT NFT
 // -----------------------------
 async function submitNFT() {
     if (!userWallet) return alert("Please connect your wallet.");
@@ -351,7 +354,7 @@ async function submitNFT() {
 }
 
 // -----------------------------
-//  PAY MINT FEE
+// PAY MINT FEE
 // -----------------------------
 async function payNow(submissionId) {
     const r = await fetch(BACKEND + "/api/pay-xrp", {
@@ -373,7 +376,7 @@ async function payNow(submissionId) {
 }
 
 // -----------------------------
-//  MINT FUNCTION (patched)
+// MINT FUNCTION
 // -----------------------------
 async function mintNow(id) {
     const r = await fetch(BACKEND + "/api/start-mint", {
@@ -391,14 +394,8 @@ async function mintNow(id) {
 }
 
 // -----------------------------
-// ON LOAD
+// LOAD MINTED GALLERY
 // -----------------------------
-document.addEventListener("DOMContentLoaded", () => {
-    checkXummPaymentFromStorage();
-    checkXummMintFromStorage();
-});
-
-/* ✅ ADDED: Minted NFTs Gallery Loader */
 async function loadMintedGallery() {
     if (!userWallet) return;
 
@@ -420,7 +417,7 @@ async function loadMintedGallery() {
                 border-radius:10px;
                 border-left:5px solid #28A745;
             ">
-                <img src="https://ipfs.io/ipfs/${nft.image_cid}"
+                <img src="https://cloudflare-ipfs.com/ipfs/${nft.image_cid}"
                      style="width:120px;border-radius:6px;margin-bottom:10px;">
                 <div><strong>${nft.name}</strong></div>
                 <div style="font-size:14px;margin-top:4px;">
@@ -437,6 +434,14 @@ async function loadMintedGallery() {
 
     document.getElementById("mintedGallery").innerHTML = html;
 }
+
+// -----------------------------
+// ON LOAD
+// -----------------------------
+document.addEventListener("DOMContentLoaded", () => {
+    checkXummPaymentFromStorage();
+    checkXummMintFromStorage();
+});
 
 </script>
 
