@@ -122,6 +122,19 @@ const PAY_UUID_KEY = "cfc_last_pay_uuid";
 const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
+/* -------------------------------------------
+   NEW: Metadata loader (safe, no regressions)
+--------------------------------------------*/
+async function fetchMetadata(cid) {
+    try {
+        const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
+        return await r.json();
+    } catch (e) {
+        console.error("Metadata load failed:", e);
+        return null;
+    }
+}
+
 // -----------------------------
 // PAYMENT CHECK
 // -----------------------------
@@ -240,7 +253,7 @@ async function loadStatus() {
             <div>Status: <strong>${cls.toUpperCase()}</strong></div>
             <div>Qty: ${sub.batch_qty}</div>
 
-            <!-- FIXED: always works -->
+            <!-- Fixed metadata link -->
             <div>Metadata: 
                 <a href="https://gateway.pinata.cloud/ipfs/${sub.metadata_cid}" target="_blank">View</a>
             </div>
@@ -360,7 +373,7 @@ async function mintNow(id) {
 }
 
 // -----------------------------
-// MINTED GALLERY
+// MINTED GALLERY (UPDATED)
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
@@ -374,7 +387,9 @@ async function loadMintedGallery() {
 
     let html = "";
 
-    minted.forEach(nft => {
+    for (const nft of minted) {
+        const md = await fetchMetadata(nft.metadata_cid);
+
         html += `
             <div style="
                 background:#fafafa;
@@ -386,12 +401,21 @@ async function loadMintedGallery() {
                 <img src="https://gateway.pinata.cloud/ipfs/${nft.image_cid}"
                      style="width:120px;border-radius:6px;margin-bottom:10px;">
 
-                <div><strong>${nft.name}</strong></div>
+                <div><strong>${md?.name || nft.name}</strong></div>
+
                 <div style="font-size:14px;margin-top:4px;">
-                    ${nft.description}
+                    ${md?.description || nft.description}
                 </div>
 
-                <!-- FIX: working metadata link -->
+                <div style="font-size:14px;margin-top:4px;">
+                    <strong>Terms:</strong> ${md?.terms || "—"}
+                </div>
+
+                <div style="font-size:14px;margin-top:4px;">
+                    <strong>Price:</strong> ${md?.price_xrp || "—"} XRP 
+                    | ${md?.price_rlusd || "—"} RLUSD
+                </div>
+
                 <a href="https://gateway.pinata.cloud/ipfs/${nft.metadata_cid}" 
                    target="_blank"
                    style="display:inline-block;margin-top:8px;font-size:14px;">
@@ -399,7 +423,7 @@ async function loadMintedGallery() {
                 </a>
             </div>
         `;
-    });
+    }
 
     document.getElementById("mintedGallery").innerHTML = html;
 }
