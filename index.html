@@ -123,7 +123,7 @@ const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
 /* -------------------------------------------
-   NEW: Metadata loader (safe, no regressions)
+   Metadata loader (same as before, unchanged)
 --------------------------------------------*/
 async function fetchMetadata(cid) {
     try {
@@ -253,7 +253,6 @@ async function loadStatus() {
             <div>Status: <strong>${cls.toUpperCase()}</strong></div>
             <div>Qty: ${sub.batch_qty}</div>
 
-            <!-- Fixed metadata link -->
             <div>Metadata: 
                 <a href="https://gateway.pinata.cloud/ipfs/${sub.metadata_cid}" target="_blank">View</a>
             </div>
@@ -373,7 +372,7 @@ async function mintNow(id) {
 }
 
 // -----------------------------
-// MINTED GALLERY (UPDATED)
+// MINTED GALLERY (FIXED — Uses DB fields only)
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
@@ -388,7 +387,6 @@ async function loadMintedGallery() {
     let html = "";
 
     for (const nft of minted) {
-        const md = await fetchMetadata(nft.metadata_cid);
 
         html += `
             <div style="
@@ -401,19 +399,19 @@ async function loadMintedGallery() {
                 <img src="https://gateway.pinata.cloud/ipfs/${nft.image_cid}"
                      style="width:120px;border-radius:6px;margin-bottom:10px;">
 
-                <div><strong>${md?.name || nft.name}</strong></div>
+                <div><strong>${nft.name}</strong></div>
 
                 <div style="font-size:14px;margin-top:4px;">
-                    ${md?.description || nft.description}
+                    ${nft.description}
                 </div>
 
                 <div style="font-size:14px;margin-top:4px;">
-                    <strong>Terms:</strong> ${md?.terms || "—"}
+                    <strong>Terms:</strong> ${nft.terms || "—"}
                 </div>
 
                 <div style="font-size:14px;margin-top:4px;">
-                    <strong>Price:</strong> ${md?.price_xrp || "—"} XRP 
-                    | ${md?.price_rlusd || "—"} RLUSD
+                    <strong>Price:</strong> ${nft.price_xrp || "—"} XRP 
+                    | ${nft.price_rlusd || "—"} RLUSD
                 </div>
 
                 <a href="https://gateway.pinata.cloud/ipfs/${nft.metadata_cid}" 
