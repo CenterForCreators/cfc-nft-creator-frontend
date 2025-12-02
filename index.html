@@ -125,7 +125,7 @@ const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
 /* ------------------------------------------------------------
-   ⭐ Metadata loader — now using Pinata gateway
+   ⭐ Metadata loader — now using Pinata
 ------------------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
@@ -314,15 +314,22 @@ async function submitNFT() {
     );
     const md = await (await fetch(BACKEND + "/api/upload", { method:"POST", body:fd2 })).json();
 
+    /* ⭐ ONLY FIX: sending terms + price_xrp + price_rlusd properly */
     await fetch(BACKEND + "/api/submit", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body:JSON.stringify({
             wallet:userWallet,
-            name, description,
+            name,
+            description,
             imageCid: upload.cid,
             metadataCid: md.cid,
-            quantity: document.getElementById("quantity").value
+            quantity: document.getElementById("quantity").value,
+            metadata: JSON.stringify({
+                terms: document.getElementById("nftTerms").value,
+                price_xrp: document.getElementById("priceXRP").value,
+                price_rlusd: document.getElementById("priceRLUSD").value
+            })
         })
     });
 
