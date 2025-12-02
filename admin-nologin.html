@@ -126,7 +126,6 @@ async function loadSubmissions() {
 
     for (const s of subs) {
 
-        /* 🔥 NEW: load metadata fields properly */
         const md = await fetchMetadata(s.metadata_cid);
 
         let metadata = {
@@ -171,13 +170,11 @@ async function loadSubmissions() {
 
             <td>${s.batch_qty}</td>
 
-            <!-- 🔥 FIXED: real prices -->
             <td>${metadata.price_xrp}</td>
             <td>${metadata.price_rlusd}</td>
 
             <td>${s.creator_wallet}</td>
 
-            <!-- FIXED METADATA LINK -->
             <td><a href="${metadataURL}" target="_blank">View</a></td>
 
             <td><a href="${mediaURL}" target="_blank">${s.image_cid}</a></td>
@@ -243,7 +240,10 @@ async function reject(id) {
 // INITIAL LOAD
 // ---------------------------
 loadSubmissions();
+
+/* ❌ REMOVED (safe): auto-refresh
 setInterval(loadSubmissions, 5000);
+*/
 
 </script>
 
