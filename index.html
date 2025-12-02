@@ -125,11 +125,11 @@ const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
 /* ------------------------------------------------------------
-   ⭐ FIXED: Metadata loader (uses Cloudflare → always returns JSON)
+   ⭐ Metadata loader — now using Pinata gateway
 ------------------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
-        const r = await fetch("https://cloudflare-ipfs.com/ipfs/" + cid);
+        const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
         return await r.json();
     } catch (e) {
         console.error("Metadata load failed:", e);
