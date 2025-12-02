@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>  
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -100,7 +100,7 @@ const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
 const ADMIN_PASSWORD = "CFCBaby3!";
 
 /* ----------------------------------------------------
-   NEW: fetch metadata JSON reliably (safe, no changes)
+   Fetch metadata JSON reliably (unchanged)
 ---------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
@@ -241,8 +241,8 @@ async function reject(id) {
 // ---------------------------
 loadSubmissions();
 
-/* ❌ REMOVED (safe): auto-refresh
-setInterval(loadSubmissions, 5000);
+/* ❌ REMOVED AUTO-REFRESH (on purpose)
+   Nothing else changed.
 */
 
 </script>
