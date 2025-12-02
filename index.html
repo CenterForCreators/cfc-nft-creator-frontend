@@ -95,13 +95,15 @@
 
 <div id="result"></div>
 
+<!-- ⭐ RESTORED ORIGINAL NFT PROCESS (Version A) -->
 <div class="info-box">
 <strong>NFT Creation Process</strong><br><br>
-1️⃣ Connect wallet<br>
-2️⃣ Upload file + fill details<br>
-3️⃣ Submit<br>
-4️⃣ Approve → Pay 5 XRP<br>
-5️⃣ Mint via Xaman<br>
+1️⃣ Connect your Xaman wallet<br>
+2️⃣ Upload file + fill out details<br>
+3️⃣ Submit NFT for approval (up to 24 hours)<br>
+4️⃣ After approval, pay the 5 XRP minting fee<br>
+5️⃣ Xaman will then open the Mint signing request<br>
+6️⃣ You will be redirected back here after each sign<br>
 </div>
 
 <div id="statusPanel" class="status-panel"></div>
@@ -122,12 +124,12 @@ const PAY_UUID_KEY = "cfc_last_pay_uuid";
 const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
-/* -------------------------------------------
-   Metadata loader (same as before, unchanged)
---------------------------------------------*/
+/* ------------------------------------------------------------
+   ⭐ FIXED: Metadata loader (uses Cloudflare → always returns JSON)
+------------------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
-        const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
+        const r = await fetch("https://cloudflare-ipfs.com/ipfs/" + cid);
         return await r.json();
     } catch (e) {
         console.error("Metadata load failed:", e);
@@ -372,7 +374,7 @@ async function mintNow(id) {
 }
 
 // -----------------------------
-// MINTED GALLERY (FIXED — Uses DB fields only)
+// MINTED GALLERY
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
@@ -387,6 +389,7 @@ async function loadMintedGallery() {
     let html = "";
 
     for (const nft of minted) {
+        const md = await fetchMetadata(nft.metadata_cid);
 
         html += `
             <div style="
@@ -399,19 +402,19 @@ async function loadMintedGallery() {
                 <img src="https://gateway.pinata.cloud/ipfs/${nft.image_cid}"
                      style="width:120px;border-radius:6px;margin-bottom:10px;">
 
-                <div><strong>${nft.name}</strong></div>
+                <div><strong>${md?.name || nft.name}</strong></div>
 
                 <div style="font-size:14px;margin-top:4px;">
-                    ${nft.description}
+                    ${md?.description || nft.description}
                 </div>
 
                 <div style="font-size:14px;margin-top:4px;">
-                    <strong>Terms:</strong> ${nft.terms || "—"}
+                    <strong>Terms:</strong> ${md?.terms || "—"}
                 </div>
 
                 <div style="font-size:14px;margin-top:4px;">
-                    <strong>Price:</strong> ${nft.price_xrp || "—"} XRP 
-                    | ${nft.price_rlusd || "—"} RLUSD
+                    <strong>Price:</strong> ${md?.price_xrp || "—"} XRP 
+                    | ${md?.price_rlusd || "—"} RLUSD
                 </div>
 
                 <a href="https://gateway.pinata.cloud/ipfs/${nft.metadata_cid}" 
