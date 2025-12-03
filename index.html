@@ -127,7 +127,7 @@ const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
 /* ------------------------------------------------------------
-   ⭐ Metadata loader
+   ⭐ Metadata loader — now using Pinata
 ------------------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
@@ -158,9 +158,14 @@ async function checkXummPaymentFromStorage() {
                 body:JSON.stringify({ id:Number(submissionId), uuid })
             });
 
-            await res.json();
+            const data = await res.json();
 
             localStorage.removeItem(PAY_UUID_KEY);
+
+            if (data.mintCreated && data.mintLink) {
+                localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
+                window.open(data.mintLink, "_blank");
+            }
 
             await loadStatus();
         }
@@ -303,6 +308,7 @@ async function submitNFT() {
         price_rlusd: document.getElementById("priceRLUSD").value,
         image: "ipfs://" + upload.cid,
     };
+
     const fd2 = new FormData();
     fd2.append("file",
         new Blob([JSON.stringify(metadata)], {type:"application/json"}),
@@ -343,7 +349,7 @@ async function submitNFT() {
 }
 
 // -----------------------------
-// PAY  ⭐ FIXED HERE ⭐
+// PAY  ⭐ ONLY CHANGE: use popup
 // -----------------------------
 async function payNow(submissionId) {
     const r = await fetch(BACKEND + "api/pay-xrp", {
@@ -356,14 +362,12 @@ async function payNow(submissionId) {
     localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
 
-    /* ⭐ OPEN XUMM POPUP INSTEAD OF REDIRECT ⭐ */
-    xumm.payload.get(d.uuid).then(() => {
-        xumm.xapp.openSignRequest({ uuid: d.uuid });
-    });
+    /* Open Xaman signing popup instead of redirect */
+    xumm.payload.open({ uuid: d.uuid });
 }
 
 // -----------------------------
-// MINT  ⭐ FIXED HERE ⭐
+// MINT  ⭐ ONLY CHANGE: use popup
 // -----------------------------
 async function mintNow(id) {
     const r = await fetch(BACKEND + "api/start-mint", {
@@ -375,10 +379,8 @@ async function mintNow(id) {
 
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
 
-    /* ⭐ OPEN XUMM POPUP INSTEAD OF REDIRECT ⭐ */
-    xumm.payload.get(d.uuid).then(() => {
-        xumm.xapp.openSignRequest({ uuid: d.uuid });
-    });
+    /* Open Xaman signing popup instead of redirect */
+    xumm.payload.open({ uuid: d.uuid });
 }
 
 // -----------------------------
