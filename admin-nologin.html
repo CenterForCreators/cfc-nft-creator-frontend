@@ -100,7 +100,7 @@ const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
 const ADMIN_PASSWORD = "CFCBaby3!";
 
 /* ----------------------------------------------------
-   Fetch metadata JSON reliably (unchanged)
+   Fetch metadata JSON reliably
 ---------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
@@ -183,10 +183,14 @@ async function loadSubmissions() {
 
             <td class="${paymentClass}">
                 ${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}
+                <br>
+                <small>UUID: ${s.payment_uuid || "—"}</small>
             </td>
 
             <td class="${mintClass}">
                 ${s.mint_status === "minted" ? "Minted ✔" : "Pending"}
+                <br>
+                <small>UUID: ${s.mint_uuid || "—"}</small>
             </td>
 
             <td>
@@ -240,10 +244,6 @@ async function reject(id) {
 // INITIAL LOAD
 // ---------------------------
 loadSubmissions();
-
-/* ❌ REMOVED AUTO-REFRESH (on purpose)
-   Nothing else changed.
-*/
 
 </script>
 
