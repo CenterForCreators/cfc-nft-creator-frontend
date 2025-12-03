@@ -64,24 +64,27 @@
     .pending { color:#FFC107; font-weight:bold; }
     .approved { color:#17A2B8; font-weight:bold; }
 
-    /* ⭐ NEW — Read more collapse styling (NO layout change) */
-    .collapse-cell {
-        max-height: 3.6em;     /* ~3 lines */
+    /* ⭐ Working 3-line ellipsis */
+    .text-ellipsis {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
         overflow: hidden;
-        position: relative;
         white-space: pre-line;
+        cursor: default;
     }
 
-    .expanded {
-        max-height: none !important;
+    .text-expanded {
+        display: block;
+        white-space: pre-line;
     }
 
     .toggle-link {
         color: #007BFF;
-        cursor: pointer;
         font-size: 13px;
-        display: inline-block;
+        cursor: pointer;
         margin-top: 4px;
+        display: inline-block;
     }
 </style>
 </head>
@@ -179,20 +182,14 @@ async function loadSubmissions() {
         const mintClass =
             s.mint_status === "minted" ? "minted" : "pending";
 
-        /* ⭐ Insert Read More for Description + Terms */
-        const descCell = `
-            <div class="collapse-cell" data-type="desc">
-                ${metadata.description}
-            </div>
-            <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
-        `;
-
-        const termsCell = `
-            <div class="collapse-cell" data-type="terms">
-                ${metadata.terms}
-            </div>
-            <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
-        `;
+        /* ⭐ NEW — Read more system for Description + Terms */
+        function buildCollapsible(text) {
+            return `
+                <div class="text-ellipsis">${text}</div>
+                <div class="text-expanded" style="display:none;">${text}</div>
+                <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
+            `;
+        }
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -200,8 +197,9 @@ async function loadSubmissions() {
             <td>${previewHTML}</td>
 
             <td>${metadata.name}</td>
-            <td>${descCell}</td>
-            <td>${termsCell}</td>
+
+            <td>${buildCollapsible(metadata.description)}</td>
+            <td>${buildCollapsible(metadata.terms)}</td>
 
             <td>${s.batch_qty}</td>
 
@@ -251,17 +249,20 @@ async function loadSubmissions() {
 }
 
 // ---------------------------
-// READ MORE / SEE LESS HANDLER
+// READ MORE / SEE LESS — WORKING VERSION
 // ---------------------------
 function toggleReadMore(el) {
-    const cell = el.previousElementSibling;
+    const collapsed = el.parentElement.querySelector(".text-ellipsis");
+    const expanded = el.parentElement.querySelector(".text-expanded");
 
-    if (cell.classList.contains("expanded")) {
-        cell.classList.remove("expanded");
-        el.textContent = "Read more";
-    } else {
-        cell.classList.add("expanded");
+    if (expanded.style.display === "none") {
+        collapsed.style.display = "none";
+        expanded.style.display = "block";
         el.textContent = "See less";
+    } else {
+        collapsed.style.display = "-webkit-box";
+        expanded.style.display = "none";
+        el.textContent = "Read more";
     }
 }
 
@@ -290,10 +291,6 @@ async function reject(id) {
 // INITIAL LOAD
 // ---------------------------
 loadSubmissions();
-
-/* ❌ REMOVED AUTO-REFRESH (on purpose)
-   Nothing else changed.
-*/
 
 </script>
 
