@@ -54,6 +54,31 @@
     .approved { border-color:#17A2B8; }
     .paid { border-color:#007BFF; }
     .minted { border-color:#28A745; }
+
+    /* READ MORE / SEE LESS CSS (Minted Gallery only) */
+    .rm-box {
+        font-size:14px;
+        margin-top:4px;
+        line-height:1.4;
+        position:relative;
+    }
+    .rm-short {
+        display:-webkit-box;
+        -webkit-line-clamp:3;
+        -webkit-box-orient:vertical;
+        overflow:hidden;
+    }
+    .rm-full {
+        display:none;
+        white-space:pre-line;
+    }
+    .rm-toggle {
+        color:#007BFF;
+        font-size:14px;
+        cursor:pointer;
+        margin-top:4px;
+        display:inline-block;
+    }
 </style>
 </head>
 
@@ -183,7 +208,7 @@ async function checkXummMintFromStorage() {
     try {
         const payload = await xumm.payload.get(mintUuid);
 
-        if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
+        if (payload && (payload.meta && payload.meta.signed)) {
             await fetch(BACKEND + "api/mark-minted", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
@@ -382,7 +407,7 @@ async function mintNow(id) {
 }
 
 // -----------------------------
-/* MINTED GALLERY */
+/* MINTED GALLERY WITH READ MORE */
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
@@ -399,6 +424,9 @@ async function loadMintedGallery() {
     for (const nft of minted) {
         const md = await fetchMetadata(nft.metadata_cid);
 
+        const desc = md?.description || nft.description || "";
+        const terms = md?.terms || "—";
+
         html += `
             <div style="
                 background:#fafafa;
@@ -412,12 +440,19 @@ async function loadMintedGallery() {
 
                 <div><strong>${md?.name || nft.name}</strong></div>
 
-                <div style="font-size:14px;margin-top:4px;">
-                    ${md?.description || nft.description}
+                <!-- DESCRIPTION WITH READ MORE -->
+                <div class="rm-box">
+                    <div class="rm-short">${desc}</div>
+                    <div class="rm-full">${desc}</div>
+                    <span class="rm-toggle">Read more</span>
                 </div>
 
-                <div style="font-size:14px;margin-top:4px;">
-                    <strong>Terms:</strong> ${md?.terms || "—"}
+                <!-- TERMS WITH READ MORE -->
+                <div style="margin-top:6px;"><strong>Terms:</strong></div>
+                <div class="rm-box">
+                    <div class="rm-short">${terms}</div>
+                    <div class="rm-full">${terms}</div>
+                    <span class="rm-toggle">Read more</span>
                 </div>
 
                 <div style="font-size:14px;margin-top:4px;">
@@ -435,6 +470,20 @@ async function loadMintedGallery() {
     }
 
     document.getElementById("mintedGallery").innerHTML = html;
+
+    /* Enable read more / see less */
+    document.querySelectorAll(".rm-box").forEach(box => {
+        const shortDiv = box.querySelector(".rm-short");
+        const fullDiv = box.querySelector(".rm-full");
+        const toggle = box.querySelector(".rm-toggle");
+
+        toggle.onclick = () => {
+            const expanded = fullDiv.style.display === "block";
+            fullDiv.style.display = expanded ? "none" : "block";
+            shortDiv.style.display = expanded ? "-webkit-box" : "none";
+            toggle.textContent = expanded ? "Read more" : "See less";
+        };
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
