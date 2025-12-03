@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>  
 <html lang="en">
 <head>
@@ -363,7 +362,8 @@ async function payNow(submissionId) {
     localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
 
-    window.open(d.link, "_blank");
+    /* ✅ Use Xumm popup instead of redirect */
+    xumm.payload.open(d.uuid);
 }
 
 // -----------------------------
@@ -379,11 +379,12 @@ async function mintNow(id) {
 
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
 
-    window.open(d.link, "_blank");
+    /* ✅ Use Xumm popup instead of redirect */
+    xumm.payload.open(d.uuid);
 }
 
 // -----------------------------
-/* MINTED GALLERY */
+// MINTED GALLERY
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
