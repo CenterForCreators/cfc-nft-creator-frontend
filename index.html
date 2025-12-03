@@ -127,7 +127,7 @@ const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
 /* ------------------------------------------------------------
-   ⭐ Metadata loader — now using Pinata
+   ⭐ Metadata loader
 ------------------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
@@ -349,7 +349,7 @@ async function submitNFT() {
 }
 
 // -----------------------------
-// PAY
+// PAY  ⭐ FIXED HERE ⭐
 // -----------------------------
 async function payNow(submissionId) {
     const r = await fetch(BACKEND + "api/pay-xrp", {
@@ -362,11 +362,12 @@ async function payNow(submissionId) {
     localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
 
-    window.open(d.link, "_blank");
+    /* ⭐ OPEN XUMM POPUP INSTEAD OF REDIRECT ⭐ */
+    xumm.payload.open(d.uuid);
 }
 
 // -----------------------------
-// MINT
+// MINT  ⭐ FIXED HERE ⭐
 // -----------------------------
 async function mintNow(id) {
     const r = await fetch(BACKEND + "api/start-mint", {
@@ -378,7 +379,8 @@ async function mintNow(id) {
 
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
 
-    window.open(d.link, "_blank");
+    /* ⭐ OPEN XUMM POPUP INSTEAD OF REDIRECT ⭐ */
+    xumm.payload.open(d.uuid);
 }
 
 // -----------------------------
