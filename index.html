@@ -117,7 +117,6 @@
 /* ⭐ ONLY FIX MADE HERE ⭐ */
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
 
-/* (REST UNCHANGED) */
 const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 
 let userWallet = "";
@@ -362,8 +361,8 @@ async function payNow(submissionId) {
     localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
 
-    /* ✅ Use Xumm popup instead of redirect */
-    xumm.payload.open(d.uuid);
+    /* ⭐ FIXED POPUP METHOD */
+    xumm.openSignRequest(d.uuid);
 }
 
 // -----------------------------
@@ -379,8 +378,8 @@ async function mintNow(id) {
 
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
 
-    /* ✅ Use Xumm popup instead of redirect */
-    xumm.payload.open(d.uuid);
+    /* ⭐ FIXED POPUP METHOD */
+    xumm.openSignRequest(d.uuid);
 }
 
 // -----------------------------
