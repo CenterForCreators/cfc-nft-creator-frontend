@@ -95,7 +95,6 @@
 
 <div id="result"></div>
 
-<!-- ⭐ RESTORED ORIGINAL NFT PROCESS (Version A) -->
 <div class="info-box">
 <strong>NFT Creation Process</strong><br><br>
 1️⃣ Connect your Xaman wallet<br>
@@ -115,7 +114,10 @@
 </div>
 
 <script>
-const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
+/* ⭐ ONLY FIX MADE HERE ⭐ */
+const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
+
+/* (REST UNCHANGED) */
 const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 
 let userWallet = "";
@@ -150,7 +152,7 @@ async function checkXummPaymentFromStorage() {
         const payload = await xumm.payload.get(uuid);
 
         if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
-            const res = await fetch(BACKEND + "/api/mark-paid", {
+            const res = await fetch(BACKEND + "api/mark-paid", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid })
@@ -182,7 +184,7 @@ async function checkXummMintFromStorage() {
         const payload = await xumm.payload.get(mintUuid);
 
         if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
-            await fetch(BACKEND + "/api/mark-minted", {
+            await fetch(BACKEND + "api/mark-minted", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid:mintUuid })
@@ -230,7 +232,7 @@ function disconnectWallet() {
 async function loadStatus() {
     if (!userWallet) return;
 
-    const r = await fetch(BACKEND + "/api/admin/submissions?password=CFCBaby3!");
+    const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
     const items = await r.json();
 
     const mine = items.filter(x => x.creator_wallet === userWallet);
@@ -295,7 +297,7 @@ async function submitNFT() {
 
     const fd = new FormData();
     fd.append("file", file);
-    const upload = await (await fetch(BACKEND + "/api/upload", { method:"POST", body:fd })).json();
+    const upload = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fd })).json();
 
     const metadata = {
         name,
@@ -312,10 +314,9 @@ async function submitNFT() {
         new Blob([JSON.stringify(metadata)], {type:"application/json"}),
         "metadata.json"
     );
-    const md = await (await fetch(BACKEND + "/api/upload", { method:"POST", body:fd2 })).json();
+    const md = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fd2 })).json();
 
-    /* ⭐ ONLY FIX: sending terms + price_xrp + price_rlusd properly */
-    await fetch(BACKEND + "/api/submit", {
+    await fetch(BACKEND + "api/submit", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body:JSON.stringify({
@@ -351,7 +352,7 @@ async function submitNFT() {
 // PAY
 // -----------------------------
 async function payNow(submissionId) {
-    const r = await fetch(BACKEND + "/api/pay-xrp", {
+    const r = await fetch(BACKEND + "api/pay-xrp", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body:JSON.stringify({ submissionId })
@@ -368,7 +369,7 @@ async function payNow(submissionId) {
 // MINT
 // -----------------------------
 async function mintNow(id) {
-    const r = await fetch(BACKEND + "/api/start-mint", {
+    const r = await fetch(BACKEND + "api/start-mint", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body:JSON.stringify({ id })
@@ -381,12 +382,12 @@ async function mintNow(id) {
 }
 
 // -----------------------------
-// MINTED GALLERY
+/* MINTED GALLERY */
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
 
-    const r = await fetch(BACKEND + "/api/admin/submissions?password=CFCBaby3!");
+    const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
     const items = await r.json();
 
     const minted = items.filter(x =>
