@@ -21,6 +21,12 @@
         width:100%; padding:12px; margin-top:6px;
         border:1px solid #ccc; border-radius:6px; font-size:16px;
     }
+    .counter {
+        font-size:13px;
+        color:#666;
+        text-align:right;
+        margin-top:3px;
+    }
     button {
         width:100%; padding:15px; margin-top:25px;
         background:#111; color:#fff; border:none;
@@ -54,31 +60,6 @@
     .approved { border-color:#17A2B8; }
     .paid { border-color:#007BFF; }
     .minted { border-color:#28A745; }
-
-    /* READ MORE / SEE LESS CSS (Minted Gallery only) */
-    .rm-box {
-        font-size:14px;
-        margin-top:4px;
-        line-height:1.4;
-        position:relative;
-    }
-    .rm-short {
-        display:-webkit-box;
-        -webkit-line-clamp:3;
-        -webkit-box-orient:vertical;
-        overflow:hidden;
-    }
-    .rm-full {
-        display:none;
-        white-space:pre-line;
-    }
-    .rm-toggle {
-        color:#007BFF;
-        font-size:14px;
-        cursor:pointer;
-        margin-top:4px;
-        display:inline-block;
-    }
 </style>
 </head>
 
@@ -96,22 +77,25 @@
 <input type="file" id="fileInput">
 
 <label>NFT Name</label>
-<input type="text" id="nftName">
+<input type="text" id="nftName" maxlength="50">
+<div id="nameCounter" class="counter">0 / 50</div>
 
 <label>Description</label>
-<textarea id="nftDescription" rows="4"></textarea>
+<textarea id="nftDescription" rows="4" maxlength="250"></textarea>
+<div id="descCounter" class="counter">0 / 250</div>
 
 <label>Terms</label>
-<textarea id="nftTerms" rows="4"></textarea>
+<textarea id="nftTerms" rows="4" maxlength="250"></textarea>
+<div id="termsCounter" class="counter">0 / 250</div>
 
 <label>Quantity (1–100)</label>
-<input type="number" id="quantity" min="1" max="100" value="1">
+<input type="number" id="quantity" min="1" max="100">
 
 <label>Price (XRP)</label>
-<input type="number" id="priceXRP" value="10">
+<input type="number" id="priceXRP">
 
 <label>Price (RLUSD)</label>
-<input type="number" id="priceRLUSD" value="25">
+<input type="number" id="priceRLUSD">
 
 <label>Royalty</label>
 <input type="text" value="5% (standard)" disabled>
@@ -150,6 +134,21 @@ let userWallet = "";
 const PAY_UUID_KEY = "cfc_last_pay_uuid";
 const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
+
+/* ------------------------------------------------------------
+   ⭐ Character Counter Logic
+------------------------------------------------------------- */
+function updateCounter(id, counterId, max) {
+    const el = document.getElementById(id);
+    const counter = document.getElementById(counterId);
+    counter.textContent = `${el.value.length} / ${max}`;
+}
+
+document.addEventListener("input", (e) => {
+    if (e.target.id === "nftName") updateCounter("nftName", "nameCounter", 50);
+    if (e.target.id === "nftDescription") updateCounter("nftDescription", "descCounter", 250);
+    if (e.target.id === "nftTerms") updateCounter("nftTerms", "termsCounter", 250);
+});
 
 /* ------------------------------------------------------------
    ⭐ Metadata loader — now using Pinata
@@ -208,7 +207,7 @@ async function checkXummMintFromStorage() {
     try {
         const payload = await xumm.payload.get(mintUuid);
 
-        if (payload && (payload.meta && payload.meta.signed)) {
+        if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
             await fetch(BACKEND + "api/mark-minted", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
@@ -339,7 +338,7 @@ async function submitNFT() {
         new Blob([JSON.stringify(metadata)], {type:"application/json"}),
         "metadata.json"
     );
-    const md = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fd2 })).json();
+    const md = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fd2 })).json());
 
     await fetch(BACKEND + "api/submit", {
         method:"POST",
@@ -366,9 +365,14 @@ async function submitNFT() {
     document.getElementById("nftName").value = "";
     document.getElementById("nftDescription").value = "";
     document.getElementById("nftTerms").value = "";
-    document.getElementById("quantity").value = "1";
-    document.getElementById("priceXRP").value = "10";
-    document.getElementById("priceRLUSD").value = "25";
+    document.getElementById("quantity").value = "";
+    document.getElementById("priceXRP").value = "";
+    document.getElementById("priceRLUSD").value = "";
+
+    // Reset counters
+    updateCounter("nftName", "nameCounter", 50);
+    updateCounter("nftDescription", "descCounter", 250);
+    updateCounter("nftTerms", "termsCounter", 250);
 
     loadStatus();
 }
@@ -407,7 +411,7 @@ async function mintNow(id) {
 }
 
 // -----------------------------
-/* MINTED GALLERY WITH READ MORE */
+/* MINTED GALLERY */
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
@@ -424,9 +428,6 @@ async function loadMintedGallery() {
     for (const nft of minted) {
         const md = await fetchMetadata(nft.metadata_cid);
 
-        const desc = md?.description || nft.description || "";
-        const terms = md?.terms || "—";
-
         html += `
             <div style="
                 background:#fafafa;
@@ -440,19 +441,12 @@ async function loadMintedGallery() {
 
                 <div><strong>${md?.name || nft.name}</strong></div>
 
-                <!-- DESCRIPTION WITH READ MORE -->
-                <div class="rm-box">
-                    <div class="rm-short">${desc}</div>
-                    <div class="rm-full">${desc}</div>
-                    <span class="rm-toggle">Read more</span>
+                <div style="font-size:14px;margin-top:4px;">
+                    ${md?.description || nft.description}
                 </div>
 
-                <!-- TERMS WITH READ MORE -->
-                <div style="margin-top:6px;"><strong>Terms:</strong></div>
-                <div class="rm-box">
-                    <div class="rm-short">${terms}</div>
-                    <div class="rm-full">${terms}</div>
-                    <span class="rm-toggle">Read more</span>
+                <div style="font-size:14px;margin-top:4px;">
+                    <strong>Terms:</strong> ${md?.terms || "—"}
                 </div>
 
                 <div style="font-size:14px;margin-top:4px;">
@@ -470,20 +464,6 @@ async function loadMintedGallery() {
     }
 
     document.getElementById("mintedGallery").innerHTML = html;
-
-    /* Enable read more / see less */
-    document.querySelectorAll(".rm-box").forEach(box => {
-        const shortDiv = box.querySelector(".rm-short");
-        const fullDiv = box.querySelector(".rm-full");
-        const toggle = box.querySelector(".rm-toggle");
-
-        toggle.onclick = () => {
-            const expanded = fullDiv.style.display === "block";
-            fullDiv.style.display = expanded ? "none" : "block";
-            shortDiv.style.display = expanded ? "-webkit-box" : "none";
-            toggle.textContent = expanded ? "Read more" : "See less";
-        };
-    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
