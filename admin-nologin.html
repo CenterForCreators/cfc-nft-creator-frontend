@@ -63,6 +63,26 @@
     .minted { color:#28A745; font-weight:bold; }
     .pending { color:#FFC107; font-weight:bold; }
     .approved { color:#17A2B8; font-weight:bold; }
+
+    /* ⭐ NEW — Read more collapse styling (NO layout change) */
+    .collapse-cell {
+        max-height: 3.6em;     /* ~3 lines */
+        overflow: hidden;
+        position: relative;
+        white-space: pre-line;
+    }
+
+    .expanded {
+        max-height: none !important;
+    }
+
+    .toggle-link {
+        color: #007BFF;
+        cursor: pointer;
+        font-size: 13px;
+        display: inline-block;
+        margin-top: 4px;
+    }
 </style>
 </head>
 
@@ -159,14 +179,29 @@ async function loadSubmissions() {
         const mintClass =
             s.mint_status === "minted" ? "minted" : "pending";
 
+        /* ⭐ Insert Read More for Description + Terms */
+        const descCell = `
+            <div class="collapse-cell" data-type="desc">
+                ${metadata.description}
+            </div>
+            <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
+        `;
+
+        const termsCell = `
+            <div class="collapse-cell" data-type="terms">
+                ${metadata.terms}
+            </div>
+            <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
+        `;
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${s.id}</td>
             <td>${previewHTML}</td>
 
             <td>${metadata.name}</td>
-            <td style="white-space:pre-line;">${metadata.description}</td>
-            <td style="white-space:pre-line;">${metadata.terms}</td>
+            <td>${descCell}</td>
+            <td>${termsCell}</td>
 
             <td>${s.batch_qty}</td>
 
@@ -212,6 +247,21 @@ async function loadSubmissions() {
         `;
 
         tbody.appendChild(tr);
+    }
+}
+
+// ---------------------------
+// READ MORE / SEE LESS HANDLER
+// ---------------------------
+function toggleReadMore(el) {
+    const cell = el.previousElementSibling;
+
+    if (cell.classList.contains("expanded")) {
+        cell.classList.remove("expanded");
+        el.textContent = "Read more";
+    } else {
+        cell.classList.add("expanded");
+        el.textContent = "See less";
     }
 }
 
