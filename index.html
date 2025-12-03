@@ -114,10 +114,10 @@
 </div>
 
 <script>
-/* ⭐ SAME BACKEND URL ⭐ */
+/* ⭐ ONLY FIX MADE HERE ⭐ */
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
 
-/* ⭐ XUMM SDK ⭐ */
+/* (REST UNCHANGED) */
 const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 
 let userWallet = "";
@@ -127,7 +127,7 @@ const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
 /* ------------------------------------------------------------
-   Metadata loader
+   ⭐ Metadata loader — now using Pinata
 ------------------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
@@ -140,31 +140,40 @@ async function fetchMetadata(cid) {
 }
 
 // -----------------------------
-// PAYMENT CHECK (unchanged)
+// PAYMENT CHECK
 // -----------------------------
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
     const submissionId = localStorage.getItem(PAY_SUB_KEY);
+
     if (!uuid || !submissionId) return;
 
     try {
         const payload = await xumm.payload.get(uuid);
 
-        if (payload && (payload.signed || payload.meta?.signed)) {
-            await fetch(BACKEND + "api/mark-paid", {
+        if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
+            const res = await fetch(BACKEND + "api/mark-paid", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid })
             });
 
+            const data = await res.json();
+
             localStorage.removeItem(PAY_UUID_KEY);
+
+            if (data.mintCreated && data.mintLink) {
+                localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
+                window.open(data.mintLink, "_blank");
+            }
+
             await loadStatus();
         }
     } catch(e){}
 }
 
 // -----------------------------
-// MINT CHECK (unchanged)
+// MINT CHECK
 // -----------------------------
 async function checkXummMintFromStorage() {
     const mintUuid = localStorage.getItem(MINT_UUID_KEY);
@@ -174,7 +183,7 @@ async function checkXummMintFromStorage() {
     try {
         const payload = await xumm.payload.get(mintUuid);
 
-        if (payload && (payload.signed || payload.meta?.signed)) {
+        if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
             await fetch(BACKEND + "api/mark-minted", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
@@ -188,12 +197,12 @@ async function checkXummMintFromStorage() {
 }
 
 // -----------------------------
-// CONNECT WALLET (unchanged)
+// CONNECT WALLET
 // -----------------------------
 async function connectWallet() {
     const popup = await xumm.authorize();
 
-    if (popup.me?.account) {
+    if (popup.me && popup.me.account) {
         userWallet = popup.me.account;
 
         document.getElementById("walletBox").innerHTML =
@@ -218,7 +227,7 @@ function disconnectWallet() {
 }
 
 // -----------------------------
-// STATUS PANEL (unchanged)
+// STATUS PANEL LOADER
 // -----------------------------
 async function loadStatus() {
     if (!userWallet) return;
@@ -247,6 +256,7 @@ async function loadStatus() {
             <div class="status-title">${sub.name}</div>
             <div>Status: <strong>${cls.toUpperCase()}</strong></div>
             <div>Qty: ${sub.batch_qty}</div>
+
             <div>Metadata: 
                 <a href="https://gateway.pinata.cloud/ipfs/${sub.metadata_cid}" target="_blank">View</a>
             </div>
@@ -273,7 +283,7 @@ async function loadStatus() {
 }
 
 // -----------------------------
-// SUBMIT NFT (unchanged)
+// SUBMIT NFT
 // -----------------------------
 async function submitNFT() {
     if (!userWallet) return alert("Please connect your wallet.");
@@ -339,7 +349,7 @@ async function submitNFT() {
 }
 
 // -----------------------------
-// ⭐ PAY (POPUP ENABLED)
+// PAY
 // -----------------------------
 async function payNow(submissionId) {
     const r = await fetch(BACKEND + "api/pay-xrp", {
@@ -349,26 +359,14 @@ async function payNow(submissionId) {
     });
     const d = await r.json();
 
-    /* 1) Create popup payload */
-    const popup = await xumm.payload.create({ txjson: d.txjson });
-
-    /* 2) Save UUID to backend so status stays correct */
-    await fetch(BACKEND + "api/save-payment-uuid", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ id: submissionId, uuid: popup.uuid })
-    });
-
-    /* 3) Save locally for return-checking */
-    localStorage.setItem(PAY_UUID_KEY, popup.uuid);
+    localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
 
-    /* 4) Open popup */
-    popup.openPopup();
+    window.open(d.link, "_blank");
 }
 
 // -----------------------------
-// ⭐ MINT (POPUP ENABLED)
+// MINT
 // -----------------------------
 async function mintNow(id) {
     const r = await fetch(BACKEND + "api/start-mint", {
@@ -378,25 +376,13 @@ async function mintNow(id) {
     });
     const d = await r.json();
 
-    /* 1) Create mint payload popup */
-    const popup = await xumm.payload.create({ txjson: d.txjson });
+    localStorage.setItem(MINT_UUID_KEY, d.uuid);
 
-    /* 2) Save UUID to backend */
-    await fetch(BACKEND + "api/save-mint-uuid", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ id, uuid: popup.uuid })
-    });
-
-    /* 3) Save local */
-    localStorage.setItem(MINT_UUID_KEY, popup.uuid);
-
-    /* 4) Open popup */
-    popup.openPopup();
+    window.open(d.link, "_blank");
 }
 
 // -----------------------------
-// MINTED GALLERY (unchanged)
+/* MINTED GALLERY */
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
