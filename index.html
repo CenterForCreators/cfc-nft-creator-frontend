@@ -114,10 +114,10 @@
 </div>
 
 <script>
-/* ⭐ ONLY FIX MADE HERE ⭐ */
+/* ⭐ SAME BACKEND URL ⭐ */
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
 
-/* (REST UNCHANGED) */
+/* ⭐ XUMM SDK ⭐ */
 const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 
 let userWallet = "";
@@ -127,7 +127,7 @@ const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
 /* ------------------------------------------------------------
-   ⭐ Metadata loader — now using Pinata
+   Metadata loader
 ------------------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
@@ -140,40 +140,31 @@ async function fetchMetadata(cid) {
 }
 
 // -----------------------------
-// PAYMENT CHECK
+// PAYMENT CHECK (unchanged)
 // -----------------------------
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
     const submissionId = localStorage.getItem(PAY_SUB_KEY);
-
     if (!uuid || !submissionId) return;
 
     try {
         const payload = await xumm.payload.get(uuid);
 
-        if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
-            const res = await fetch(BACKEND + "api/mark-paid", {
+        if (payload && (payload.signed || payload.meta?.signed)) {
+            await fetch(BACKEND + "api/mark-paid", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid })
             });
 
-            const data = await res.json();
-
             localStorage.removeItem(PAY_UUID_KEY);
-
-            if (data.mintCreated && data.mintLink) {
-                localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
-                window.open(data.mintLink, "_blank");
-            }
-
             await loadStatus();
         }
     } catch(e){}
 }
 
 // -----------------------------
-// MINT CHECK
+// MINT CHECK (unchanged)
 // -----------------------------
 async function checkXummMintFromStorage() {
     const mintUuid = localStorage.getItem(MINT_UUID_KEY);
@@ -183,7 +174,7 @@ async function checkXummMintFromStorage() {
     try {
         const payload = await xumm.payload.get(mintUuid);
 
-        if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
+        if (payload && (payload.signed || payload.meta?.signed)) {
             await fetch(BACKEND + "api/mark-minted", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
@@ -197,12 +188,12 @@ async function checkXummMintFromStorage() {
 }
 
 // -----------------------------
-// CONNECT WALLET
+// CONNECT WALLET (unchanged)
 // -----------------------------
 async function connectWallet() {
     const popup = await xumm.authorize();
 
-    if (popup.me && popup.me.account) {
+    if (popup.me?.account) {
         userWallet = popup.me.account;
 
         document.getElementById("walletBox").innerHTML =
@@ -227,7 +218,7 @@ function disconnectWallet() {
 }
 
 // -----------------------------
-// STATUS PANEL LOADER
+// STATUS PANEL (unchanged)
 // -----------------------------
 async function loadStatus() {
     if (!userWallet) return;
@@ -256,7 +247,6 @@ async function loadStatus() {
             <div class="status-title">${sub.name}</div>
             <div>Status: <strong>${cls.toUpperCase()}</strong></div>
             <div>Qty: ${sub.batch_qty}</div>
-
             <div>Metadata: 
                 <a href="https://gateway.pinata.cloud/ipfs/${sub.metadata_cid}" target="_blank">View</a>
             </div>
@@ -283,7 +273,7 @@ async function loadStatus() {
 }
 
 // -----------------------------
-// SUBMIT NFT
+// SUBMIT NFT (unchanged)
 // -----------------------------
 async function submitNFT() {
     if (!userWallet) return alert("Please connect your wallet.");
@@ -349,7 +339,7 @@ async function submitNFT() {
 }
 
 // -----------------------------
-// PAY  ⭐ ONLY CHANGE: use popup
+// ⭐ PAY (POPUP ENABLED)
 // -----------------------------
 async function payNow(submissionId) {
     const r = await fetch(BACKEND + "api/pay-xrp", {
@@ -359,15 +349,26 @@ async function payNow(submissionId) {
     });
     const d = await r.json();
 
-    localStorage.setItem(PAY_UUID_KEY, d.uuid);
+    /* 1) Create popup payload */
+    const popup = await xumm.payload.create({ txjson: d.txjson });
+
+    /* 2) Save UUID to backend so status stays correct */
+    await fetch(BACKEND + "api/save-payment-uuid", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ id: submissionId, uuid: popup.uuid })
+    });
+
+    /* 3) Save locally for return-checking */
+    localStorage.setItem(PAY_UUID_KEY, popup.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
 
-    /* Open Xaman signing popup instead of redirect */
-    xumm.payload.open({ uuid: d.uuid });
+    /* 4) Open popup */
+    popup.openPopup();
 }
 
 // -----------------------------
-// MINT  ⭐ ONLY CHANGE: use popup
+// ⭐ MINT (POPUP ENABLED)
 // -----------------------------
 async function mintNow(id) {
     const r = await fetch(BACKEND + "api/start-mint", {
@@ -377,14 +378,25 @@ async function mintNow(id) {
     });
     const d = await r.json();
 
-    localStorage.setItem(MINT_UUID_KEY, d.uuid);
+    /* 1) Create mint payload popup */
+    const popup = await xumm.payload.create({ txjson: d.txjson });
 
-    /* Open Xaman signing popup instead of redirect */
-    xumm.payload.open({ uuid: d.uuid });
+    /* 2) Save UUID to backend */
+    await fetch(BACKEND + "api/save-mint-uuid", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ id, uuid: popup.uuid })
+    });
+
+    /* 3) Save local */
+    localStorage.setItem(MINT_UUID_KEY, popup.uuid);
+
+    /* 4) Open popup */
+    popup.openPopup();
 }
 
 // -----------------------------
-/* MINTED GALLERY */
+// MINTED GALLERY (unchanged)
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
