@@ -79,16 +79,16 @@
 <input type="file" id="fileInput">
 
 <label>NFT Name</label>
-<input type="text" id="nftName" maxlength="50">
-<div id="countName" class="char-counter">0 / 50</div>
+<input type="text" id="nftName" maxlength="100">
+<div id="countName" class="char-counter">0 / 100</div>
 
 <label>Description</label>
-<textarea id="nftDescription" rows="4" maxlength="250"></textarea>
-<div id="countDescription" class="char-counter">0 / 250</div>
+<textarea id="nftDescription" rows="4" maxlength="750"></textarea>
+<div id="countDescription" class="char-counter">0 / 750</div>
 
 <label>Terms</label>
-<textarea id="nftTerms" rows="4" maxlength="250"></textarea>
-<div id="countTerms" class="char-counter">0 / 250</div>
+<textarea id="nftTerms" rows="4" maxlength="750"></textarea>
+<div id="countTerms" class="char-counter">0 / 750</div>
 
 <label>Quantity (1–100)</label>
 <input type="number" id="quantity" min="1" max="100">
@@ -129,7 +129,7 @@
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
 
 /* -------------------------------------------
-   CHARACTER COUNTERS
+   CHARACTER COUNTERS — UPDATED LIMITS
 -------------------------------------------- */
 function updateCounter(idInput, idCounter, max) {
     const el = document.getElementById(idInput);
@@ -139,9 +139,10 @@ function updateCounter(idInput, idCounter, max) {
     });
 }
 
-updateCounter("nftName", "countName", 50);
-updateCounter("nftDescription", "countDescription", 250);
-updateCounter("nftTerms", "countTerms", 250);
+/* UPDATED MAXES */
+updateCounter("nftName", "countName", 100);
+updateCounter("nftDescription", "countDescription", 750);
+updateCounter("nftTerms", "countTerms", 750);
 
 /* (REST UNCHANGED BELOW THIS LINE) */
 const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
