@@ -11,6 +11,7 @@
         background: #000;
         margin: 0;
         padding: 30px;
+        overflow-x: hidden; /* ⭐ Fix horizontal scroll */
     }
 
     .box {
@@ -64,7 +65,6 @@
     .pending { color:#FFC107; font-weight:bold; }
     .approved { color:#17A2B8; font-weight:bold; }
 
-    /* ⭐ Working 3-line ellipsis */
     .text-ellipsis {
         display: -webkit-box;
         -webkit-line-clamp: 3;
@@ -122,9 +122,6 @@
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
 const ADMIN_PASSWORD = "CFCBaby3!";
 
-/* ----------------------------------------------------
-   Fetch metadata JSON reliably (unchanged)
----------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
         const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
@@ -135,9 +132,6 @@ async function fetchMetadata(cid) {
     }
 }
 
-// ---------------------------
-// LOAD ALL SUBMISSIONS
-// ---------------------------
 async function loadSubmissions() {
     const res = await fetch(
         BACKEND + "/api/admin/submissions?password=" + ADMIN_PASSWORD
@@ -182,7 +176,6 @@ async function loadSubmissions() {
         const mintClass =
             s.mint_status === "minted" ? "minted" : "pending";
 
-        /* ⭐ NEW — Read more system for Description + Terms */
         function buildCollapsible(text) {
             return `
                 <div class="text-ellipsis">${text}</div>
@@ -195,33 +188,22 @@ async function loadSubmissions() {
         tr.innerHTML = `
             <td>${s.id}</td>
             <td>${previewHTML}</td>
-
             <td>${metadata.name}</td>
-
             <td>${buildCollapsible(metadata.description)}</td>
             <td>${buildCollapsible(metadata.terms)}</td>
-
             <td>${s.batch_qty}</td>
-
             <td>${metadata.price_xrp}</td>
             <td>${metadata.price_rlusd}</td>
-
             <td>${s.creator_wallet}</td>
-
             <td><a href="${metadataURL}" target="_blank">View</a></td>
-
             <td><a href="${mediaURL}" target="_blank">${s.image_cid}</a></td>
-
             <td class="${statusClass}">${s.status}</td>
-
             <td class="${paymentClass}">
                 ${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}
             </td>
-
             <td class="${mintClass}">
                 ${s.mint_status === "minted" ? "Minted ✔" : "Pending"}
             </td>
-
             <td>
                 ${
                     s.status === "pending"
@@ -248,9 +230,6 @@ async function loadSubmissions() {
     }
 }
 
-// ---------------------------
-// READ MORE / SEE LESS — WORKING VERSION
-// ---------------------------
 function toggleReadMore(el) {
     const collapsed = el.parentElement.querySelector(".text-ellipsis");
     const expanded = el.parentElement.querySelector(".text-expanded");
@@ -266,9 +245,6 @@ function toggleReadMore(el) {
     }
 }
 
-// ---------------------------
-// ACTIONS
-// ---------------------------
 async function approve(id) {
     await fetch(BACKEND + "/api/admin/approve", {
         method: "POST",
@@ -287,11 +263,17 @@ async function reject(id) {
     loadSubmissions();
 }
 
-// ---------------------------
-// INITIAL LOAD
-// ---------------------------
 loadSubmissions();
+</script>
 
+<!-- ⭐ ONLY NEW ADDITION (auto height) -->
+<script>
+function sendHeight() {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ cfcHeight: height }, "*");
+}
+setInterval(sendHeight, 500);
+window.onload = sendHeight;
 </script>
 
 </body>
