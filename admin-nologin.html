@@ -8,7 +8,7 @@
 <style>
     body {
         font-family: Arial, sans-serif;
-        background: #000;
+        background: #fff; /* ← CHANGED FROM #000 TO #fff */
         margin: 0;
         padding: 30px;
     }
@@ -265,7 +265,7 @@ async function reject(id) {
 loadSubmissions();
 </script>
 
-<!-- ⭐ ADDED: Auto-height broadcasting (same as creator page) -->
+<!-- Auto-height broadcasting -->
 <script>
 function sendHeight() {
     const height = document.body.scrollHeight;
