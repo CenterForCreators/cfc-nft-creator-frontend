@@ -479,7 +479,15 @@ rlusdInput.addEventListener("input", () => {
     xrpInput.value = xrp.toFixed(4);
 });
 
-</script>
+</script>  
+<script>
+function sendHeight() {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ cfcHeight: height }, "*");
+}
 
+setInterval(sendHeight, 500);   // update twice per second
+window.onload = sendHeight;
+</script>
 </body>
 </html>
