@@ -432,6 +432,53 @@ document.addEventListener("DOMContentLoaded", () => {
     checkXummPaymentFromStorage();
     checkXummMintFromStorage();
 });
+
+
+// -------------------------------------------------------
+// ADDITION: AUTO-POPULATE XRP ↔ RLUSD (LIVE XRP PRICE)
+// -------------------------------------------------------
+let xrpPriceUSD = 0;
+
+// Fetch live XRP price (CoinGecko)
+async function fetchXRPPrice() {
+    try {
+        const r = await fetch(
+            "https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd"
+        );
+        const d = await r.json();
+        xrpPriceUSD = d.ripple.usd;
+    } catch (e) {
+        console.warn("Failed to fetch XRP price");
+    }
+}
+fetchXRPPrice();
+setInterval(fetchXRPPrice, 20000);
+
+const xrpInput = document.getElementById("priceXRP");
+const rlusdInput = document.getElementById("priceRLUSD");
+
+// XRP → RLUSD
+xrpInput.addEventListener("input", () => {
+    if (!xrpPriceUSD) return;
+    if (xrpInput.value === "") {
+        rlusdInput.value = "";
+        return;
+    }
+    const usd = Number(xrpInput.value) * xrpPriceUSD;
+    rlusdInput.value = usd.toFixed(2);
+});
+
+// RLUSD → XRP
+rlusdInput.addEventListener("input", () => {
+    if (!xrpPriceUSD) return;
+    if (rlusdInput.value === "") {
+        xrpInput.value = "";
+        return;
+    }
+    const xrp = Number(rlusdInput.value) / xrpPriceUSD;
+    xrpInput.value = xrp.toFixed(4);
+});
+
 </script>
 
 </body>
