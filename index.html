@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>   
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -61,6 +61,21 @@
         color:#666;
         text-align:right;
         margin-top:4px;
+    }
+
+    /* ⭐ Read More styling */
+    .collapsed-text {
+        display:-webkit-box;
+        -webkit-line-clamp:3;
+        -webkit-box-orient:vertical;
+        overflow:hidden;
+    }
+    .read-more {
+        color:#007BFF;
+        font-size:13px;
+        cursor:pointer;
+        margin-top:4px;
+        display:inline-block;
     }
 </style>
 </head>
@@ -139,7 +154,6 @@ function updateCounter(idInput, idCounter, max) {
     });
 }
 
-/* UPDATED MAXES */
 updateCounter("nftName", "countName", 100);
 updateCounter("nftDescription", "countDescription", 750);
 updateCounter("nftTerms", "countTerms", 750);
@@ -409,7 +423,7 @@ async function mintNow(id) {
 }
 
 // -----------------------------
-/* MINTED GALLERY */
+/* MINTED GALLERY with READ MORE / SEE LESS */
 // -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
@@ -426,6 +440,9 @@ async function loadMintedGallery() {
     for (const nft of minted) {
         const md = await fetchMetadata(nft.metadata_cid);
 
+        const desc = md?.description || nft.description;
+        const terms = md?.terms || "—";
+
         html += `
             <div style="
                 background:#fafafa;
@@ -439,13 +456,15 @@ async function loadMintedGallery() {
 
                 <div><strong>${md?.name || nft.name}</strong></div>
 
-                <div style="font-size:14px;margin-top:4px;">
-                    ${md?.description || nft.description}
+                <div class="collapsed-text" id="desc-${nft.id}">
+                    ${desc}
                 </div>
+                <span class="read-more" onclick="toggleText('desc-${nft.id}')">Read more</span>
 
-                <div style="font-size:14px;margin-top:4px;">
-                    <strong>Terms:</strong> ${md?.terms || "—"}
+                <div class="collapsed-text" id="terms-${nft.id}" style="margin-top:6px;">
+                    <strong>Terms:</strong> ${terms}
                 </div>
+                <span class="read-more" onclick="toggleText('terms-${nft.id}')">Read more</span>
 
                 <div style="font-size:14px;margin-top:4px;">
                     <strong>Price:</strong> ${md?.price_xrp || "—"} XRP 
@@ -462,6 +481,20 @@ async function loadMintedGallery() {
     }
 
     document.getElementById("mintedGallery").innerHTML = html;
+}
+
+/* Expand / Collapse function */
+function toggleText(id) {
+    const el = document.getElementById(id);
+    const link = el.nextElementSibling;
+
+    if (el.classList.contains("collapsed-text")) {
+        el.classList.remove("collapsed-text");
+        link.textContent = "See less";
+    } else {
+        el.classList.add("collapsed-text");
+        link.textContent = "Read more";
+    }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
