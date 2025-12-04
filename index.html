@@ -55,7 +55,6 @@
     .paid { border-color:#007BFF; }
     .minted { border-color:#28A745; }
 
-    /* ⭐ Character counters (right aligned) */
     .char-counter {
         font-size:12px;
         color:#666;
@@ -63,7 +62,6 @@
         margin-top:4px;
     }
 
-    /* ⭐ Read More styling */
     .collapsed-text {
         display:-webkit-box;
         -webkit-line-clamp:3;
@@ -78,7 +76,6 @@
         display:inline-block;
     }
 
-    /* ⭐ REMOVE NUMBER ARROWS (ONLY CHANGE REQUESTED) */
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -116,7 +113,7 @@
 <div id="countTerms" class="char-counter">0 / 750</div>
 
 <label>Quantity (1–100)</label>
-<input type="number" id="quantity" min="1" max="100">
+<input type="number" id="quantity" min="1" max="100" oninput="if (this.value > 100) this.value = 100;">
 
 <label>Price (XRP)</label>
 <input type="number" id="priceXRP">
@@ -150,12 +147,8 @@
 </div>
 
 <script>
-/* ⭐ ONLY FIX MADE HERE ⭐ */
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
 
-/* -------------------------------------------
-   CHARACTER COUNTERS — UPDATED LIMITS
--------------------------------------------- */
 function updateCounter(idInput, idCounter, max) {
     const el = document.getElementById(idInput);
     const counter = document.getElementById(idCounter);
@@ -168,7 +161,6 @@ updateCounter("nftName", "countName", 100);
 updateCounter("nftDescription", "countDescription", 750);
 updateCounter("nftTerms", "countTerms", 750);
 
-/* (REST UNCHANGED BELOW THIS LINE) */
 const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
 
 let userWallet = "";
@@ -177,91 +169,62 @@ const PAY_UUID_KEY = "cfc_last_pay_uuid";
 const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
 
-/* ------------------------------------------------------------
-   ⭐ Metadata loader — now using Pinata
-------------------------------------------------------------- */
 async function fetchMetadata(cid) {
     try {
         const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
         return await r.json();
-    } catch (e) {
-        console.error("Metadata load failed:", e);
-        return null;
-    }
+    } catch (e) { return null; }
 }
 
-// -----------------------------
-// PAYMENT CHECK
-// -----------------------------
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
     const submissionId = localStorage.getItem(PAY_SUB_KEY);
-
     if (!uuid || !submissionId) return;
-
     try {
         const payload = await xumm.payload.get(uuid);
-
-        if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
+        if (payload && (payload.signed || payload.meta?.signed)) {
             const res = await fetch(BACKEND + "api/mark-paid", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid })
             });
-
             const data = await res.json();
-
             localStorage.removeItem(PAY_UUID_KEY);
-
             if (data.mintCreated && data.mintLink) {
                 localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
                 window.open(data.mintLink, "_blank");
             }
-
             await loadStatus();
         }
     } catch(e){}
 }
 
-// -----------------------------
-// MINT CHECK
-// -----------------------------
 async function checkXummMintFromStorage() {
     const mintUuid = localStorage.getItem(MINT_UUID_KEY);
     const submissionId = localStorage.getItem(PAY_SUB_KEY);
     if (!mintUuid || !submissionId) return;
-
     try {
         const payload = await xumm.payload.get(mintUuid);
-
-        if (payload && (payload.signed || (payload.meta && payload.meta.signed))) {
+        if (payload && (payload.signed || payload.meta?.signed)) {
             await fetch(BACKEND + "api/mark-minted", {
                 method:"POST",
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid:mintUuid })
             });
-
             localStorage.removeItem(MINT_UUID_KEY);
             await loadStatus();
         }
     } catch(e){}
 }
 
-// -----------------------------
-// CONNECT WALLET
-// -----------------------------
 async function connectWallet() {
     const popup = await xumm.authorize();
-
-    if (popup.me && popup.me.account) {
+    if (popup.me?.account) {
         userWallet = popup.me.account;
-
         document.getElementById("walletBox").innerHTML =
             "Wallet: <strong>" + userWallet + "</strong>";
-
         document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
         document.getElementById("connectBtn").onclick = disconnectWallet;
-
         await loadStatus();
         await checkXummPaymentFromStorage();
         await checkXummMintFromStorage();
@@ -277,31 +240,22 @@ function disconnectWallet() {
     document.getElementById("statusPanel").innerHTML = "";
 }
 
-// -----------------------------
-// STATUS PANEL LOADER
-// -----------------------------
 async function loadStatus() {
     if (!userWallet) return;
-
     const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
     const items = await r.json();
-
     const mine = items.filter(x => x.creator_wallet === userWallet);
-
     let html = "<h2>My Submissions</h2>";
-
-    if (mine.length === 0) {
+    if (!mine.length) {
         html += "<p>You have no submissions yet.</p>";
         document.getElementById("statusPanel").innerHTML = html;
         return;
     }
-
     mine.forEach(sub => {
         let cls = "pending";
         if (sub.status === "approved" && sub.payment_status === "unpaid") cls = "approved";
         if (sub.payment_status === "paid" && sub.mint_status === "pending") cls = "paid";
         if (sub.mint_status === "minted") cls = "minted";
-
         html += `
         <div class="status-card ${cls}">
             <div class="status-title">${sub.name}</div>
@@ -312,37 +266,26 @@ async function loadStatus() {
                 <a href="https://gateway.pinata.cloud/ipfs/${sub.metadata_cid}" target="_blank">View</a>
             </div>
         `;
-
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
             html += `<button onclick="payNow(${sub.id})">Pay 5 XRP Mint Fee</button>`;
         }
-
         if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
             html += `<button onclick="mintNow(${sub.id})">Mint NFT</button>`;
         }
-
         if (sub.mint_status === "minted") {
             html += `<div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>`;
         }
-
         html += `</div>`;
     });
-
     document.getElementById("statusPanel").innerHTML = html;
-
     await loadMintedGallery();
 }
 
-// -----------------------------
-// SUBMIT NFT
-// -----------------------------
 async function submitNFT() {
     if (!userWallet) return alert("Please connect your wallet.");
-
     const file = document.getElementById("fileInput").files[0];
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
-
     if (!file || !name || !description)
         return alert("Fill all required fields.");
 
@@ -399,9 +342,6 @@ async function submitNFT() {
     loadStatus();
 }
 
-// -----------------------------
-// PAY
-// -----------------------------
 async function payNow(submissionId) {
     const r = await fetch(BACKEND + "api/pay-xrp", {
         method:"POST",
@@ -409,16 +349,11 @@ async function payNow(submissionId) {
         body:JSON.stringify({ submissionId })
     });
     const d = await r.json();
-
     localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
-
     window.open(d.link, "_blank");
 }
 
-// -----------------------------
-// MINT
-// -----------------------------
 async function mintNow(id) {
     const r = await fetch(BACKEND + "api/start-mint", {
         method:"POST",
@@ -426,33 +361,22 @@ async function mintNow(id) {
         body:JSON.stringify({ id })
     });
     const d = await r.json();
-
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
-
     window.open(d.link, "_blank");
 }
 
-// -----------------------------
-/* MINTED GALLERY with READ MORE / SEE LESS */
-// -----------------------------
 async function loadMintedGallery() {
     if (!userWallet) return;
-
     const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
     const items = await r.json();
-
     const minted = items.filter(x =>
         x.creator_wallet === userWallet && x.mint_status === "minted"
     );
-
     let html = "";
-
     for (const nft of minted) {
         const md = await fetchMetadata(nft.metadata_cid);
-
         const desc = md?.description || nft.description;
         const terms = md?.terms || "—";
-
         html += `
             <div style="
                 background:#fafafa;
@@ -489,15 +413,12 @@ async function loadMintedGallery() {
             </div>
         `;
     }
-
     document.getElementById("mintedGallery").innerHTML = html;
 }
 
-/* Expand / Collapse function */
 function toggleText(id) {
     const el = document.getElementById(id);
     const link = el.nextElementSibling;
-
     if (el.classList.contains("collapsed-text")) {
         el.classList.remove("collapsed-text");
         link.textContent = "See less";
