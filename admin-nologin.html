@@ -265,5 +265,15 @@ async function reject(id) {
 loadSubmissions();
 </script>
 
+<!-- ⭐ ADDED: Auto-height broadcasting (same as creator page) -->
+<script>
+function sendHeight() {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ cfcHeight: height }, "*");
+}
+setInterval(sendHeight, 500);
+window.onload = sendHeight;
+</script>
+
 </body>
 </html>
