@@ -110,6 +110,10 @@
 <textarea id="nftTerms" rows="4" maxlength="750"></textarea>
 <div id="countTerms" class="char-counter">0 / 750</div>
 
+<label>Email (required)</label>
+<input type="email" id="email" name="email" placeholder="you@yourdomain.com" required>
+
+
 <label>Quantity (1–100)</label>
 <input type="number" id="quantity" min="1" max="100" oninput="if (this.value > 100) this.value = 100;">
 
@@ -344,6 +348,8 @@ async function submitNFT() {
     document.getElementById("quantity").value = "";
     document.getElementById("priceXRP").value = "";
     document.getElementById("priceRLUSD").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("website").value = "";
 
     loadStatus();
 }
