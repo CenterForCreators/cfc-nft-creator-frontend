@@ -47,6 +47,7 @@
     }
     .approve { background: #28a745; color: #fff; }
     .reject  { background: #dc3545; color: #fff; }
+
     .preview-img { max-width: 140px; border-radius: 6px; }
 
     .paid { color:#007BFF; font-weight:bold; }
@@ -110,105 +111,101 @@ const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
 const ADMIN_PASSWORD = "CFCBaby3!";
 
 async function fetchMetadata(cid) {
-  try {
-    const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
-    return await r.json();
-  } catch (e) {
-    return null;
-  }
+    try {
+        const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
+        return await r.json();
+    } catch {
+        return null;
+    }
 }
 
 function buildCollapsible(text) {
-  return `
-    <div class="text-ellipsis">${text}</div>
-    <div class="text-expanded" style="display:none;">${text}</div>
-    <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
-  `;
+    return `
+      <div class="text-ellipsis">${text}</div>
+      <div class="text-expanded" style="display:none;">${text}</div>
+      <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
+    `;
 }
 
 async function loadSubmissions() {
-  const res = await fetch(`${BACKEND}/api/admin/submissions?password=${ADMIN_PASSWORD}`);
-  const subs = await res.json();
+    const res = await fetch(`${BACKEND}/api/admin/submissions?password=${ADMIN_PASSWORD}`);
+    const subs = await res.json();
+    const tbody = document.querySelector("#subTable tbody");
+    tbody.innerHTML = "";
 
-  const tbody = document.querySelector("#subTable tbody");
-  tbody.innerHTML = "";
+    for (const s of subs) {
+        const md = await fetchMetadata(s.metadata_cid);
+        const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
 
-  for (const s of subs) {
-    const md = await fetchMetadata(s.metadata_cid);
-
-    const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
-    const preview = `<img src="${mediaURL}" class="preview-img">`;
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${s.id}</td>
-      <td>${preview}</td>
-      <td>${md?.name || s.name}</td>
-      <td>${buildCollapsible(md?.description || s.description)}</td>
-      <td>${buildCollapsible(md?.terms || s.terms || "—")}</td>
-      <td>${s.batch_qty}</td>
-      <td>${md?.price_xrp || s.price_xrp || "—"}</td>
-      <td>${md?.price_rlusd || s.price_rlusd || "—"}</td>
-      <td>${s.creator_wallet}</td>
-      <td>${s.email || "—"}</td>
-      <td>${s.website ? `<a href="${s.website}" target="_blank">Visit</a>` : "—"}</td>
-      <td class="${s.status}">${s.status}</td>
-      <td class="${s.payment_status === "paid" ? "paid" : "pending"}">${s.payment_status}</td>
-      <td class="${s.mint_status === "minted" ? "minted" : "pending"}">${s.mint_status}</td>
-     <td>
-  ${
-    s.status === "pending"
-      ? `
-        <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-        <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-      `
-      : s.status === "rejected"
-      ? `<span class="rejected">❌ Rejected</span>`
-      : `<span style="color:#888;">—</span>`
-  }
-</td>
-
-    `;
-    tbody.appendChild(tr);
-  }
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${s.id}</td>
+          <td><img src="${mediaURL}" class="preview-img"></td>
+          <td>${md?.name || s.name}</td>
+          <td>${buildCollapsible(md?.description || s.description)}</td>
+          <td>${buildCollapsible(md?.terms || s.terms || "—")}</td>
+          <td>${s.batch_qty}</td>
+          <td>${md?.price_xrp || s.price_xrp || "—"}</td>
+          <td>${md?.price_rlusd || s.price_rlusd || "—"}</td>
+          <td>${s.creator_wallet}</td>
+          <td>${s.email || "—"}</td>
+          <td>${s.website ? `<a href="${s.website}" target="_blank">Visit</a>` : "—"}</td>
+          <td class="${s.status}">${s.status}</td>
+          <td class="${s.payment_status === "paid" ? "paid" : "pending"}">${s.payment_status}</td>
+          <td class="${s.mint_status === "minted" ? "minted" : "pending"}">${s.mint_status}</td>
+          <td>
+            ${
+              s.status === "pending"
+                ? `
+                  <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                  <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+                `
+                : s.status === "rejected"
+                ? `<span class="rejected">❌ Rejected</span>`
+                : `<span style="color:#888;">—</span>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+    }
 }
 
 function toggleReadMore(el) {
-  const box = el.parentElement;
-  const collapsed = box.querySelector(".text-ellipsis");
-  const expanded = box.querySelector(".text-expanded");
+    const box = el.parentElement;
+    const collapsed = box.querySelector(".text-ellipsis");
+    const expanded = box.querySelector(".text-expanded");
 
-  if (expanded.style.display === "none") {
-    collapsed.style.display = "none";
-    expanded.style.display = "block";
-    el.textContent = "See less";
-  } else {
-    collapsed.style.display = "-webkit-box";
-    expanded.style.display = "none";
-    el.textContent = "Read more";
-  }
+    if (expanded.style.display === "none") {
+        collapsed.style.display = "none";
+        expanded.style.display = "block";
+        el.textContent = "See less";
+    } else {
+        collapsed.style.display = "-webkit-box";
+        expanded.style.display = "none";
+        el.textContent = "Read more";
+    }
 }
 
 async function approve(id) {
-  await fetch(`${BACKEND}/api/admin/approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, password: ADMIN_PASSWORD })
-  });
-  loadSubmissions();
+    await fetch(`${BACKEND}/api/admin/approve`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+    });
+    loadSubmissions();
 }
 
 async function reject(id) {
-  const reason = prompt("Enter rejection reason (this will be emailed to the creator):");
-  if (!reason) return;
+    const reason = prompt("Enter rejection reason (this will be emailed to the creator):");
+    if (!reason) return;
 
-  await fetch(`${BACKEND}/api/admin/reject`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
-  });
+    await fetch(`${BACKEND}/api/admin/reject`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
+    });
 
-  loadSubmissions();
+    loadSubmissions();
 }
 
 loadSubmissions();
@@ -216,7 +213,7 @@ loadSubmissions();
 
 <script>
 function sendHeight() {
-  window.parent.postMessage({ cfcHeight: document.body.scrollHeight }, "*");
+    window.parent.postMessage({ cfcHeight: document.body.scrollHeight }, "*");
 }
 setInterval(sendHeight, 500);
 window.onload = sendHeight;
