@@ -196,14 +196,22 @@ async function approve(id) {
 }
 
 async function reject(id) {
-    const reason = prompt("Reason for rejection (creator will be emailed):");
+    const reason = prompt(
+      "Enter rejection reason (this will be emailed to the creator):"
+    );
+
     if (!reason) return;
 
-    await fetch(`${BACKEND}/api/admin/reject`, {
+    await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
+        body: JSON.stringify({
+          id,
+          password: ADMIN_PASSWORD,
+          reason
+        })
     });
+
     loadSubmissions();
 }
 
