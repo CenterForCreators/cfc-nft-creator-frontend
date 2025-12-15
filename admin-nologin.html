@@ -158,17 +158,14 @@ async function loadSubmissions() {
           <td>
             ${
               s.status === "pending"
-              ? `
-                <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-              `
-              : ""
-            }
-          </td>
-        `;
-        tbody.appendChild(tr);
-    }
-}
+      ? `
+        <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+        <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+      `
+      : s.status === "rejected"
+      ? `<span style="color:#dc3545;font-weight:bold;">❌ Rejected</span>`
+      : ""
+  }
 
 function toggleReadMore(el) {
     const box = el.parentElement;
