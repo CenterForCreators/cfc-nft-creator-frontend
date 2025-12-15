@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -6,17 +6,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-    html {
-        background: #fff; /* make full page white */
-    }
-
+    html { background: #fff; }
     body {
         font-family: Arial, sans-serif;
         background: #fff;
         margin: 0;
         padding: 30px;
     }
-
     .box {
         max-width: 1400px;
         margin: auto;
@@ -24,31 +20,23 @@
         border-radius: 12px;
         padding: 30px;
     }
-
-    h1 {
-        text-align: center;
-        margin-bottom: 25px;
-    }
-
+    h1 { text-align: center; margin-bottom: 25px; }
     table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 30px;
         font-size: 15px;
     }
-
     th, td {
         padding: 12px;
         border-bottom: 1px solid #ccc;
         vertical-align: top;
     }
-
     th {
         background: #eee;
         text-align: left;
         font-weight: bold;
     }
-
     .action-btn {
         padding: 6px 10px;
         border: none;
@@ -57,16 +45,15 @@
         font-size: 14px;
         margin-right: 6px;
     }
-
     .approve { background: #28a745; color: #fff; }
     .reject  { background: #dc3545; color: #fff; }
-
     .preview-img { max-width: 140px; border-radius: 6px; }
 
     .paid { color:#007BFF; font-weight:bold; }
     .minted { color:#28A45; font-weight:bold; }
     .pending { color:#FFC107; font-weight:bold; }
     .approved { color:#17A2B8; font-weight:bold; }
+    .rejected { color:#dc3545; font-weight:bold; }
 
     .text-ellipsis {
         display: -webkit-box;
@@ -74,14 +61,11 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
         white-space: pre-line;
-        cursor: default;
     }
-
     .text-expanded {
         display: block;
         white-space: pre-line;
     }
-
     .toggle-link {
         color: #007BFF;
         font-size: 13px;
@@ -95,30 +79,30 @@
 <body>
 
 <div class="box">
-    <h1>CFC NFT Creator — Admin Dashboard</h1>
+<h1>CFC NFT Creator — Admin Dashboard</h1>
 
-    <table id="subTable">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Preview</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Terms</th>
-                <th>Qty</th>
-                <th>Price XRP</th>
-                <th>Price RLUSD</th>
-                <th>Wallet</th>
-                <th>Metadata</th>
-                <th>Media</th>
-                <th>Status</th>
-                <th>Payment</th>
-                <th>Mint</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+<table id="subTable">
+<thead>
+<tr>
+    <th>ID</th>
+    <th>Preview</th>
+    <th>Name</th>
+    <th>Description</th>
+    <th>Terms</th>
+    <th>Qty</th>
+    <th>Price XRP</th>
+    <th>Price RLUSD</th>
+    <th>Wallet</th>
+    <th>Email</th>
+    <th>Website</th>
+    <th>Status</th>
+    <th>Payment</th>
+    <th>Mint</th>
+    <th>Actions</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 </div>
 
 <script>
@@ -129,113 +113,67 @@ async function fetchMetadata(cid) {
     try {
         const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
         return await r.json();
-    } catch (e) {
-        console.error("Metadata fetch failed:", e);
+    } catch {
         return null;
     }
 }
 
-async function loadSubmissions() {
-    const res = await fetch(
-        BACKEND + "/api/admin/submissions?password=" + ADMIN_PASSWORD
-    );
-    const subs = await res.json();
+function buildCollapsible(text) {
+    return `
+      <div class="text-ellipsis">${text}</div>
+      <div class="text-expanded" style="display:none;">${text}</div>
+      <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
+    `;
+}
 
+async function loadSubmissions() {
+    const res = await fetch(`${BACKEND}/api/admin/submissions?password=${ADMIN_PASSWORD}`);
+    const subs = await res.json();
     const tbody = document.querySelector("#subTable tbody");
     tbody.innerHTML = "";
 
     for (const s of subs) {
-
         const md = await fetchMetadata(s.metadata_cid);
 
-        let metadata = {
-            name: md?.name || s.name,
-            description: md?.description || s.description,
-            terms: md?.terms || "—",
-            price_xrp: md?.price_xrp || "—",
-            price_rlusd: md?.price_rlusd || "—"
-        };
-
         const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
-        const metadataURL = "https://gateway.pinata.cloud/ipfs/" + s.metadata_cid;
 
-        let previewHTML = "";
-
-        if (s.image_cid.endsWith(".pdf")) {
-            previewHTML = `<a href="${mediaURL}" target="_blank">📄 PDF</a>`;
-        } else if (s.image_cid.match(/\.(mp4|mov|webm)$/i)) {
-            previewHTML = `<video src="${mediaURL}" width="140" controls></video>`;
-        } else {
-            previewHTML = `<img src="${mediaURL}" class="preview-img">`;
-        }
-
-        const statusClass =
-            s.status === "pending" ? "pending" :
-            s.status === "approved" ? "approved" : "minted";
-
-        const paymentClass =
-            s.payment_status === "paid" ? "paid" : "pending";
-
-        const mintClass =
-            s.mint_status === "minted" ? "minted" : "pending";
-
-        function buildCollapsible(text) {
-            return `
-                <div class="text-ellipsis">${text}</div>
-                <div class="text-expanded" style="display:none;">${text}</div>
-                <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
-            `;
-        }
+        let preview = `<img src="${mediaURL}" class="preview-img">`;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${s.id}</td>
-            <td>${previewHTML}</td>
-            <td>${metadata.name}</td>
-            <td>${buildCollapsible(metadata.description)}</td>
-            <td>${buildCollapsible(metadata.terms)}</td>
-            <td>${s.batch_qty}</td>
-            <td>${metadata.price_xrp}</td>
-            <td>${metadata.price_rlusd}</td>
-            <td>${s.creator_wallet}</td>
-            <td><a href="${metadataURL}" target="_blank">View</a></td>
-            <td><a href="${mediaURL}" target="_blank">${s.image_cid}</a></td>
-            <td class="${statusClass}">${s.status}</td>
-            <td class="${paymentClass}">
-                ${s.payment_status === "paid" ? "Paid ✔" : "Unpaid"}
-            </td>
-            <td class="${mintClass}">
-                ${s.mint_status === "minted" ? "Minted ✔" : "Pending"}
-            </td>
-            <td>
-                ${
-                    s.status === "pending"
-                        ? `
-                           <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                           <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-                          `
-                        : ""
-                }
-                ${
-                    s.status === "approved" && s.payment_status === "unpaid"
-                        ? `<span style="font-size:13px;color:#555;">Awaiting payment…</span>`
-                        : ""
-                }
-                ${
-                    s.payment_status === "paid" && s.mint_status !== "minted"
-                        ? `<span style="font-size:13px;color:#555;">Minting… (auto)</span>`
-                        : ""
-                }
-            </td>
+          <td>${s.id}</td>
+          <td>${preview}</td>
+          <td>${md?.name || s.name}</td>
+          <td>${buildCollapsible(md?.description || s.description)}</td>
+          <td>${buildCollapsible(md?.terms || s.terms || "—")}</td>
+          <td>${s.batch_qty}</td>
+          <td>${md?.price_xrp || s.price_xrp || "—"}</td>
+          <td>${md?.price_rlusd || s.price_rlusd || "—"}</td>
+          <td>${s.creator_wallet}</td>
+          <td>${s.email || "—"}</td>
+          <td>${s.website ? `<a href="${s.website}" target="_blank">Visit</a>` : "—"}</td>
+          <td class="${s.status}">${s.status}</td>
+          <td class="${s.payment_status === "paid" ? "paid" : "pending"}">${s.payment_status}</td>
+          <td class="${s.mint_status === "minted" ? "minted" : "pending"}">${s.mint_status}</td>
+          <td>
+            ${
+              s.status === "pending"
+              ? `
+                <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+              `
+              : ""
+            }
+          </td>
         `;
-
         tbody.appendChild(tr);
     }
 }
 
 function toggleReadMore(el) {
-    const collapsed = el.parentElement.querySelector(".text-ellipsis");
-    const expanded = el.parentElement.querySelector(".text-expanded");
+    const box = el.parentElement;
+    const collapsed = box.querySelector(".text-ellipsis");
+    const expanded = box.querySelector(".text-expanded");
 
     if (expanded.style.display === "none") {
         collapsed.style.display = "none";
@@ -249,7 +187,7 @@ function toggleReadMore(el) {
 }
 
 async function approve(id) {
-    await fetch(BACKEND + "/api/admin/approve", {
+    await fetch(`${BACKEND}/api/admin/approve`, {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ id, password: ADMIN_PASSWORD })
@@ -258,10 +196,13 @@ async function approve(id) {
 }
 
 async function reject(id) {
-    await fetch(BACKEND + "/api/admin/reject", {
+    const reason = prompt("Reason for rejection (creator will be emailed):");
+    if (!reason) return;
+
+    await fetch(`${BACKEND}/api/admin/reject`, {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
     });
     loadSubmissions();
 }
@@ -269,11 +210,9 @@ async function reject(id) {
 loadSubmissions();
 </script>
 
-<!-- Auto-height broadcasting -->
 <script>
 function sendHeight() {
-    const height = document.body.scrollHeight;
-    window.parent.postMessage({ cfcHeight: height }, "*");
+    window.parent.postMessage({ cfcHeight: document.body.scrollHeight }, "*");
 }
 setInterval(sendHeight, 500);
 window.onload = sendHeight;
