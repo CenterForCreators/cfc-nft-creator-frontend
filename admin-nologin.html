@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,6 +104,7 @@
 <tbody></tbody>
 </table>
 </div>
+
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
 const ADMIN_PASSWORD = "CFCBaby3!";
@@ -134,7 +134,9 @@ async function loadSubmissions() {
 
     for (const s of subs) {
         const md = await fetchMetadata(s.metadata_cid);
+
         const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
+
         let preview = `<img src="${mediaURL}" class="preview-img">`;
 
         const tr = document.createElement("tr");
@@ -156,13 +158,11 @@ async function loadSubmissions() {
           <td>
             ${
               s.status === "pending"
-                ? `
-                  <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                  <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-                `
-                : s.status === "rejected"
-                ? `<span style="color:#dc3545;font-weight:bold;">❌ Rejected</span>`
-                : ""
+              ? `
+                <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+              `
+              : ""
             }
           </td>
         `;
@@ -196,21 +196,27 @@ async function approve(id) {
 }
 
 async function reject(id) {
-    const reason = prompt("Enter rejection reason (this will be emailed to the creator):");
+    const reason = prompt(
+      "Enter rejection reason (this will be emailed to the creator):"
+    );
+
     if (!reason) return;
 
-    await fetch(`${BACKEND}/api/admin/reject`, {
+    await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
+        body: JSON.stringify({
+          id,
+          password: ADMIN_PASSWORD,
+          reason
+        })
     });
+
     loadSubmissions();
 }
 
 loadSubmissions();
 </script>
-
-
 
 <script>
 function sendHeight() {
