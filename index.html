@@ -265,10 +265,20 @@ async function loadStatus() {
         if (sub.status === "approved" && sub.payment_status === "unpaid") cls = "approved";
         if (sub.payment_status === "paid" && sub.mint_status === "pending") cls = "paid";
         if (sub.mint_status === "minted") cls = "minted";
+        if (sub.status === "rejected") cls = "rejected";
         html += `
         <div class="status-card ${cls}">
             <div class="status-title">${sub.name}</div>
-            <div>Status: <strong>${cls.toUpperCase()}</strong></div>
+            <div>
+  Status:
+  <strong>
+    ${
+      sub.status === "rejected"
+        ? "❌ REJECTED — check your email"
+        : cls.toUpperCase()
+    }
+  </strong>
+</div>
             <div>Qty: ${sub.batch_qty}</div>
 
             <div>Metadata: 
