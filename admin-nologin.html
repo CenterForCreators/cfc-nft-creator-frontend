@@ -157,14 +157,16 @@ async function loadSubmissions() {
           <td class="${s.payment_status === "paid" ? "paid" : "pending"}">${s.payment_status}</td>
           <td class="${s.mint_status === "minted" ? "minted" : "pending"}">${s.mint_status}</td>
           <td>
-            ${
-              s.status === "pending"
-              ? `
-                <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-              `
-              : ""
-            }
+           ${
+  s.status === "pending"
+    ? `
+      <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+      <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+    `
+    : s.status === "rejected"
+      ? `<span class="rejected">❌ Rejected</span>`
+      : ""
+}
           </td>
         `;
         tbody.appendChild(tr);
