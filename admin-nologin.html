@@ -64,7 +64,6 @@
         white-space: pre-line;
     }
     .text-expanded {
-        display: block;
         white-space: pre-line;
     }
     .toggle-link {
@@ -136,11 +135,12 @@ async function loadSubmissions() {
     for (const s of subs) {
         const md = await fetchMetadata(s.metadata_cid);
         const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
+        const preview = `<img src="${mediaURL}" class="preview-img">`;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${s.id}</td>
-          <td><img src="${mediaURL}" class="preview-img"></td>
+          <td>${preview}</td>
           <td>${md?.name || s.name}</td>
           <td>${buildCollapsible(md?.description || s.description)}</td>
           <td>${buildCollapsible(md?.terms || s.terms || "—")}</td>
