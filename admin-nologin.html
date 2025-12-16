@@ -1,223 +1,347 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<title>CFC Admin Dashboard (Auto Mint Enabled)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+import express from "express";
+import cors from "cors";
+import fileUpload from "express-fileupload";
+import axios from "axios";
+import FormData from "form-data";
+import xrpl from "xrpl";
+import dotenv from "dotenv";
+import pg from "pg";
 
-<style>
-    html { background: #fff; }
-    body {
-        font-family: Arial, sans-serif;
-        background: #fff;
-        margin: 0;
-        padding: 30px;
-    }
-    .box {
-        max-width: 1400px;
-        margin: auto;
-        background: #fff;
-        border-radius: 12px;
-        padding: 30px;
-    }
-    h1 { text-align: center; margin-bottom: 25px; }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 30px;
-        font-size: 15px;
-    }
-    th, td {
-        padding: 12px;
-        border-bottom: 1px solid #ccc;
-        vertical-align: top;
-    }
-    th {
-        background: #eee;
-        text-align: left;
-        font-weight: bold;
-    }
-    .action-btn {
-        padding: 6px 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        margin-right: 6px;
-    }
-    .approve { background: #28a745; color: #fff; }
-    .reject  { background: #dc3545; color: #fff; }
+dotenv.config();
 
-    .preview-img { max-width: 140px; border-radius: 6px; }
+const { Pool } = pg;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
-    .paid { color:#007BFF; font-weight:bold; }
-    .minted { color:#28A45; font-weight:bold; }
-    .pending { color:#FFC107; font-weight:bold; }
-    .approved { color:#17A2B8; font-weight:bold; }
-    .rejected { color:#dc3545; font-weight:bold; }
+// -------------------------------
+// CONFIG
+// -------------------------------
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const PINATA_API_KEY = process.env.PINATA_API_KEY;
+const PINATA_API_SECRET = process.env.PINATA_API_SECRET;
+const XUMM_API_KEY = process.env.XUMM_API_KEY;
+const XUMM_API_SECRET = process.env.XUMM_API_SECRET;
 
-    .text-ellipsis {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        white-space: pre-line;
+const PAYMENT_DEST = "rU15yYD3cHmNXGxHJSJGoLUSogxZ17FpKd";
+const CREATOR_PAGE = "https://centerforcreators.com/nft-creator";
+
+const MARKETPLACE_BACKEND =
+  "https://cfc-nft-shared-mint-backend.onrender.com/api/add-nft";
+
+const PORT = process.env.PORT || 4000;
+
+// -------------------------------
+// APP INIT
+// -------------------------------
+const app = express();
+app.use(express.json());
+app.use(fileUpload());
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      const allowed = [
+        "https://centerforcreators.com",
+        "https://centerforcreators.github.io",
+        null
+      ];
+      if (!origin || allowed.includes(origin)) callback(null, true);
+      else callback(new Error("CORS blocked: " + origin));
+    },
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
+
+// -------------------------------
+// DATABASE INITIALIZATION
+// -------------------------------
+async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS submissions (
+      id SERIAL PRIMARY KEY,
+      creator_wallet TEXT,
+      name TEXT,
+      description TEXT,
+      image_cid TEXT,
+      metadata_cid TEXT,
+      batch_qty INTEGER,
+      status TEXT,
+      payment_status TEXT DEFAULT 'unpaid',
+      mint_status TEXT DEFAULT 'pending',
+      created_at TEXT,
+      payment_uuid TEXT,
+      mint_uuid TEXT,
+      terms TEXT,
+      price_xrp TEXT,
+      price_rlusd TEXT,
+      email TEXT,
+      website TEXT
+    );
+  `);
+
+  // ✅ Step 2: rejection reason column (safe to run repeatedly)
+  await pool.query(`
+    ALTER TABLE submissions
+    ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+  `);
+}
+initDB();
+
+// -------------------------------
+// UTIL — XUMM PAYLOAD
+// -------------------------------
+async function createXummPayload(txjson) {
+  const r = await axios.post(
+    "https://xumm.app/api/v1/platform/payload",
+    {
+      txjson,
+      options: { return_url: { web: CREATOR_PAGE, app: CREATOR_PAGE } },
+    },
+    {
+      headers: {
+        "X-API-Key": XUMM_API_KEY,
+        "X-API-Secret": XUMM_API_SECRET,
+        "Content-Type": "application/json",
+      },
     }
-    .text-expanded {
-        white-space: pre-line;
-    }
-    .toggle-link {
-        color: #007BFF;
-        font-size: 13px;
-        cursor: pointer;
-        margin-top: 4px;
-        display: inline-block;
-    }
-</style>
-</head>
-
-<body>
-
-<div class="box">
-<h1>CFC NFT Creator — Admin Dashboard</h1>
-
-<table id="subTable">
-<thead>
-<tr>
-    <th>ID</th>
-    <th>Preview</th>
-    <th>Name</th>
-    <th>Description</th>
-    <th>Terms</th>
-    <th>Qty</th>
-    <th>Price XRP</th>
-    <th>Price RLUSD</th>
-    <th>Wallet</th>
-    <th>Email</th>
-    <th>Website</th>
-    <th>Status</th>
-    <th>Payment</th>
-    <th>Mint</th>
-    <th>Actions</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-
-<script>
-const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
-const ADMIN_PASSWORD = "CFCBaby3!";
-
-async function fetchMetadata(cid) {
-    try {
-        const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
-        return await r.json();
-    } catch {
-        return null;
-    }
+  );
+  return { uuid: r.data.uuid, link: r.data.next.always };
 }
 
-function buildCollapsible(text) {
-    return `
-      <div class="text-ellipsis">${text}</div>
-      <div class="text-expanded" style="display:none;">${text}</div>
-      <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
-    `;
-}
+// -------------------------------
+// UPLOAD FILE TO PINATA
+// -------------------------------
+app.post("/api/upload", async (req, res) => {
+  try {
+    const file = req.files?.file;
+    if (!file) return res.status(400).json({ error: "No file" });
 
-async function loadSubmissions() {
-    const res = await fetch(`${BACKEND}/api/admin/submissions?password=${ADMIN_PASSWORD}`);
-    const subs = await res.json();
-    const tbody = document.querySelector("#subTable tbody");
-    tbody.innerHTML = "";
+    const form = new FormData();
+    form.append("file", file.data, file.name);
 
-    for (const s of subs) {
-        const md = await fetchMetadata(s.metadata_cid);
-        const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
-        const preview = `<img src="${mediaURL}" class="preview-img">`;
+    const uploadRes = await axios.post(
+      "https://api.pinata.cloud/pinning/pinFileToIPFS",
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+          pinata_api_key: PINATA_API_KEY,
+          pinata_secret_api_key: PINATA_API_SECRET,
+        },
+      }
+    );
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${s.id}</td>
-          <td>${preview}</td>
-          <td>${md?.name || s.name}</td>
-          <td>${buildCollapsible(md?.description || s.description)}</td>
-          <td>${buildCollapsible(md?.terms || s.terms || "—")}</td>
-          <td>${s.batch_qty}</td>
-          <td>${md?.price_xrp || s.price_xrp || "—"}</td>
-          <td>${md?.price_rlusd || s.price_rlusd || "—"}</td>
-          <td>${s.creator_wallet}</td>
-          <td>${s.email || "—"}</td>
-          <td>${s.website ? `<a href="${s.website}" target="_blank">Visit</a>` : "—"}</td>
-          <td class="${s.status}">${s.status}</td>
-          <td class="${s.payment_status === "paid" ? "paid" : "pending"}">${s.payment_status}</td>
-          <td class="${s.mint_status === "minted" ? "minted" : "pending"}">${s.mint_status}</td>
-          <td>
-            ${
-              s.status === "pending"
-                ? `
-                  <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                  <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-                `
-                : s.status === "rejected"
-                ? `<span class="rejected">❌ Rejected</span>`
-                : `<span style="color:#888;">—</span>`
-            }
-          </td>
-        `;
-        tbody.appendChild(tr);
-    }
-}
+    res.json({ cid: uploadRes.data.IpfsHash });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
 
-function toggleReadMore(el) {
-    const box = el.parentElement;
-    const collapsed = box.querySelector(".text-ellipsis");
-    const expanded = box.querySelector(".text-expanded");
+// -------------------------------
+// SUBMIT NFT (UPDATED)
+// -------------------------------
+app.post("/api/submit", async (req, res) => {
+  try {
+    const {
+      wallet,
+      name,
+      description,
+      imageCid,
+      metadataCid,
+      quantity,
+      email,
+      website
+    } = req.body;
 
-    if (expanded.style.display === "none") {
-        collapsed.style.display = "none";
-        expanded.style.display = "block";
-        el.textContent = "See less";
-    } else {
-        collapsed.style.display = "-webkit-box";
-        expanded.style.display = "none";
-        el.textContent = "Read more";
-    }
-}
+    const metadataJSON = JSON.parse(req.body.metadata || "{}");
 
-async function approve(id) {
-    await fetch(`${BACKEND}/api/admin/approve`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
+    const terms = metadataJSON.terms || null;
+    const price_xrp = metadataJSON.price_xrp || null;
+    const price_rlusd = metadataJSON.price_rlusd || null;
+
+    const result = await pool.query(
+      `
+      INSERT INTO submissions
+      (creator_wallet, name, description, image_cid, metadata_cid, batch_qty,
+       status, payment_status, mint_status, created_at,
+       terms, price_xrp, price_rlusd, email, website)
+      VALUES ($1,$2,$3,$4,$5,$6,'pending','unpaid','pending',$7,$8,$9,$10,$11,$12)
+      RETURNING id
+      `,
+      [
+        wallet,
+        name,
+        description,
+        imageCid,
+        metadataCid,
+        quantity,
+        new Date().toISOString(),
+        terms,
+        price_xrp,
+        price_rlusd,
+        email,
+        website
+      ]
+    );
+
+    res.json({ submitted: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Submission failed" });
+  }
+});
+
+// -------------------------------
+// ADMIN
+// -------------------------------
+app.get("/api/admin/submissions", async (req, res) => {
+  if (req.query.password !== ADMIN_PASSWORD)
+    return res.status(403).json({ error: "Unauthorized" });
+
+  const rows = await pool.query("SELECT * FROM submissions ORDER BY id DESC");
+  res.json(rows.rows);
+});
+
+// -------------------------------
+// APPROVE / REJECT
+// -------------------------------
+app.post("/api/admin/approve", async (req, res) => {
+  const { id, password } = req.body;
+  if (password !== ADMIN_PASSWORD)
+    return res.status(403).json({ error: "Unauthorized" });
+
+  // ✅ Clear any prior rejection reason when approving
+  await pool.query(
+    "UPDATE submissions SET status='approved', rejection_reason=NULL WHERE id=$1",
+    [id]
+  );
+
+  res.json({ ok: true });
+});
+
+app.post("/api/admin/reject", async (req, res) => {
+  const { id, password, reason } = req.body;
+  if (password !== ADMIN_PASSWORD)
+    return res.status(403).json({ error: "Unauthorized" });
+
+  // ✅ Store rejection reason + status
+  await pool.query(
+    "UPDATE submissions SET status='rejected', rejection_reason=$2 WHERE id=$1",
+    [id, reason || null]
+  );
+
+  res.json({ ok: true });
+});
+
+// -------------------------------
+// PAY XRP
+// -------------------------------
+app.post("/api/pay-xrp", async (req, res) => {
+  try {
+    const { submissionId } = req.body;
+
+    const payload = {
+      TransactionType: "Payment",
+      Destination: PAYMENT_DEST,
+      Amount: String(5 * 1_000_000),
+    };
+
+    const { uuid, link } = await createXummPayload(payload);
+
+    await pool.query(
+      "UPDATE submissions SET payment_status='paid', payment_uuid=$1 WHERE id=$2",
+      [uuid, submissionId]
+    );
+
+    res.json({ uuid, link });
+  } catch (err) {
+    console.error("PAY XRP error:", err);
+    res.status(500).json({ error: "Failed to create payment payload" });
+  }
+});
+
+// -------------------------------
+// START MINT
+// -------------------------------
+app.post("/api/start-mint", async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    const result = await pool.query(
+      "SELECT metadata_cid FROM submissions WHERE id=$1",
+      [id]
+    );
+
+    if (!result.rows.length)
+      return res.status(404).json({ error: "Submission not found" });
+
+    const metadataCid = result.rows[0].metadata_cid;
+    const uriHex = Buffer.from("ipfs://" + metadataCid).toString("hex");
+
+    const payload = {
+      TransactionType: "NFTokenMint",
+      Flags: 8,
+      URI: uriHex,
+      NFTokenTaxon: 0,
+    };
+
+    const { uuid, link } = await createXummPayload(payload);
+
+    await pool.query("UPDATE submissions SET mint_uuid=$1 WHERE id=$2", [
+      uuid,
+      id,
+    ]);
+
+    res.json({ uuid, link });
+  } catch (err) {
+    console.error("START MINT error:", err);
+    res.status(500).json({ error: "Failed to create mint payload" });
+  }
+});
+
+// -------------------------------
+// MARK MINTED + SEND TO MARKETPLACE
+// -------------------------------
+app.post("/api/mark-minted", async (req, res) => {
+  const { id } = req.body;
+
+  await pool.query(
+    "UPDATE submissions SET mint_status='minted' WHERE id=$1",
+    [id]
+  );
+
+  const q = await pool.query("SELECT * FROM submissions WHERE id=$1", [id]);
+  const sub = q.rows[0];
+
+  try {
+    await axios.post(MARKETPLACE_BACKEND, {
+      submission_id: sub.id,
+      name: sub.name,
+      description: sub.description,
+      terms: sub.terms,
+      quantity: sub.batch_qty,
+      price_xrp: sub.price_xrp,
+      price_rlusd: sub.price_rlusd,
+      image_cid: sub.image_cid,
+      metadata_cid: sub.metadata_cid,
+      creator_wallet: sub.creator_wallet,
+      // keep these as-is (marketplace backend expects website field)
+      creator_email: sub.email,
+      creator_website: sub.website
     });
-    loadSubmissions();
-}
+  } catch (e) {
+    console.error("Marketplace sync failed:", e.message);
+  }
 
-async function reject(id) {
-    const reason = prompt("Enter rejection reason (this will be emailed to the creator):");
-    if (!reason) return;
+  res.json({ ok: true });
+});
 
-    await fetch(`${BACKEND}/api/admin/reject`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
-    });
-
-    loadSubmissions();
-}
-
-loadSubmissions();
-</script>
-
-<script>
-function sendHeight() {
-    window.parent.postMessage({ cfcHeight: document.body.scrollHeight }, "*");
-}
-setInterval(sendHeight, 500);
-window.onload = sendHeight;
-</script>
-
-</body>
-</html>
+// -------------------------------
+// START SERVER
+// -------------------------------
+app.listen(PORT, () => {
+  console.log("CFC NFT Creator Backend running on", PORT);
+});
