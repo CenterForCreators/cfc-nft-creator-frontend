@@ -158,13 +158,13 @@ async function loadSubmissions() {
           <td>
             ${
               s.status === "pending"
-                ? `
-                  <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                  <button class="action-btn reject" onclick="rejectSubmission(${s.id})">Reject</button>
-                `
-                : s.status === "rejected"
-                  ? `<span class="rejected">❌ Rejected</span>`
-                  : ""
+              ? `
+                <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
+                <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
+              `
+              : s.status === "rejected"
+                ? `<span class="rejected">❌ Rejected</span>`
+                : ""
             }
           </td>
         `;
@@ -197,14 +197,21 @@ async function approve(id) {
     loadSubmissions();
 }
 
-async function rejectSubmission(id) {
-    const reason = prompt("Enter rejection reason (this will be emailed to the creator):");
+async function reject(id) {
+    const reason = prompt(
+      "Enter rejection reason (this will be emailed to the creator):"
+    );
+
     if (!reason) return;
 
-    await fetch(`${BACKEND}/api/admin/reject`, {
+    await fetch(BACKEND + "/api/admin/reject", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
+        body: JSON.stringify({
+          id,
+          password: ADMIN_PASSWORD,
+          reason
+        })
     });
 
     loadSubmissions();
