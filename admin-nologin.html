@@ -80,6 +80,28 @@
 
 <div class="box">
 <h1>CFC NFT Creator — Admin Dashboard</h1>
+    <!-- ===============================
+     LEARN-TO-EARN ACTIVITY (NEW)
+     ADD-ONLY / NO REGRESSIONS
+================================ -->
+
+<h2 style="margin-top:50px;">Learn-to-Earn Activity</h2>
+
+<table id="learnTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Wallet</th>
+      <th>Submission ID</th>
+      <th>Action</th>
+      <th>Reference</th>
+      <th>Earned</th>
+      <th>Paid</th>
+      <th>Timestamp</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
 <table id="subTable">
 <thead>
@@ -203,18 +225,51 @@ async function approve(id) {
 }
 
 async function reject(id) {
-  const reason = "Rejected by admin (details will be emailed).";
+    const reason = "Rejected by admin (details will be emailed).";
 
-  await fetch(`${BACKEND}/api/admin/reject`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
-  });
+    await fetch(`${BACKEND}/api/admin/reject`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
+    });
 
-  loadSubmissions();
+    loadSubmissions();
 }
 
-loadSubmissions();
+// ===============================
+// LEARN-TO-EARN ADMIN LOAD (NEW)
+// ===============================
+async function loadLearnActivity() {
+    const res = await fetch(
+        `${BACKEND}/api/admin/learn-activity?password=${ADMIN_PASSWORD}`
+    );
+
+    if (!res.ok) return;
+
+    const rows = await res.json();
+    const tbody = document.querySelector("#learnTable tbody");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    for (const r of rows) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${r.id}</td>
+            <td>${r.wallet}</td>
+            <td>${r.submission_id}</td>
+            <td>${r.action_type}</td>
+            <td>${r.action_ref}</td>
+            <td>${r.tokens_earned}</td>
+            <td>${r.tokens_paid}</td>
+            <td>${new Date(r.created_at).toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+loadLearnActivity();
+
 </script>
 
 <script>
