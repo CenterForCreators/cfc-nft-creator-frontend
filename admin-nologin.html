@@ -98,6 +98,7 @@
     <th>Status</th>
     <th>Payment</th>
     <th>Mint</th>
+    <th>Redeem</th>
     <th>Actions</th>
 </tr>
 </thead>
@@ -136,7 +137,6 @@ async function loadSubmissions() {
         const md = await fetchMetadata(s.metadata_cid);
 
         const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
-
         let preview = `<img src="${mediaURL}" class="preview-img">`;
 
         const tr = document.createElement("tr");
@@ -155,6 +155,11 @@ async function loadSubmissions() {
           <td class="${s.status}">${s.status}</td>
           <td class="${s.payment_status === "paid" ? "paid" : "pending"}">${s.payment_status}</td>
           <td class="${s.mint_status === "minted" ? "minted" : "pending"}">${s.mint_status}</td>
+          <td>
+            ${s.status === "REDEEM_REQUESTED"
+              ? `<strong style="color:#dc3545">Redeem Requested</strong><br>Email: ${s.buyer_email || "—"}`
+              : "—"}
+          </td>
           <td>
             ${
               s.status === "pending"
@@ -196,6 +201,7 @@ async function approve(id) {
     });
     loadSubmissions();
 }
+
 async function reject(id) {
   const reason = "Rejected by admin (details will be emailed).";
 
