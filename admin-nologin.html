@@ -179,7 +179,22 @@ ${md.learn.content}
           <td>${s.id}</td>
           <td>${preview}</td>
           <td>${md?.name || s.name}</td>
-          <td>${buildCollapsible(md?.description || s.description)}</td>
+      <td>
+  ${buildCollapsible(md?.description || s.description)}
+
+  ${
+    md?.learn?.enabled
+      ? `
+        <div style="margin-top:10px;padding:10px;background:#f4f4f4;border-radius:6px;">
+          <strong>Learn-to-Earn Content</strong>
+          <pre style="white-space:pre-wrap;font-size:13px;margin-top:6px;">
+${md.learn.content}
+          </pre>
+        </div>
+        `
+      : ""
+  }
+</td>
           <td>${buildCollapsible(md?.terms || s.terms || "—")}</td>
           <td>${s.batch_qty}</td>
           <td>${md?.price_xrp || s.price_xrp || "—"}</td>
