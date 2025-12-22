@@ -107,6 +107,36 @@
 <label>Description</label>
 <textarea id="nftDescription" rows="4" maxlength="750"></textarea>
 <div id="countDescription" class="char-counter">0 / 750</div>
+<!-- ============================= -->
+<!-- LEARN-TO-EARN (OPTIONAL) -->
+<!-- ============================= -->
+
+<label style="margin-top:25px;">
+  <input type="checkbox" id="enableLearn">
+  Enable Learn-to-Earn rewards for this NFT
+</label>
+
+<div id="learnBox" style="display:none;margin-top:10px;">
+
+  <div style="font-size:14px;color:#444;margin-bottom:8px;">
+    <strong>Learn-to-Earn Setup</strong><br>
+    Add up to 3 questions or activities per chapter or section.
+    <strong>YOU MUST label the Chapter or Section number.</strong><br>
+    Works for books (chapters) and workshops (sections).
+  </div>
+
+  <textarea
+    id="learnText"
+    rows="8"
+    placeholder="Chapter 1
+Question 1: What is decentralization?
+Question 2: Why is trust important?
+
+Chapter 2
+Question 1: Explain self-custody."
+  ></textarea>
+
+</div>
 
 <label>Terms</label>
 <textarea id="nftTerms" rows="4" maxlength="750"></textarea>
@@ -503,6 +533,14 @@ rlusdInput.addEventListener("input", () => {
     }
     const xrp = Number(rlusdInput.value) / xrpPriceUSD;
     xrpInput.value = xrp.toFixed(4);
+});
+    
+// -------------------------------
+// LEARN-TO-EARN TOGGLE
+// -------------------------------
+document.getElementById("enableLearn").addEventListener("change", e => {
+  document.getElementById("learnBox").style.display =
+    e.target.checked ? "block" : "none";
 });
 
 </script>  
