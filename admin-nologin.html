@@ -157,6 +157,19 @@ async function loadSubmissions() {
 
     for (const s of subs) {
         const md = await fetchMetadata(s.metadata_cid);
+// -------------------------------
+// LEARN-TO-EARN (ADMIN VIEW)
+// -------------------------------
+if (md?.learn?.enabled) {
+  html += `
+    <div style="margin-top:10px;padding:10px;background:#f4f4f4;border-radius:6px;">
+      <strong>Learn-to-Earn Content</strong><br>
+      <pre style="white-space:pre-wrap;font-size:13px;margin-top:6px;">
+${md.learn.content}
+      </pre>
+    </div>
+  `;
+}
 
         const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
         let preview = `<img src="${mediaURL}" class="preview-img">`;
