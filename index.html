@@ -360,6 +360,15 @@ async function submitNFT() {
         price_rlusd: cleanNum(document.getElementById("priceRLUSD").value),
         image: "ipfs://" + upload.cid,
     };
+const learnEnabled = document.getElementById("enableLearn").checked;
+const learnText = document.getElementById("learnText").value;
+
+if (learnEnabled && learnText.trim()) {
+    metadata.learn = {
+        enabled: true,
+        content: learnText
+    };
+}
 
     const fd2 = new FormData();
     fd2.append("file",
