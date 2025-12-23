@@ -95,16 +95,11 @@
 <button id="connectBtn" onclick="connectWallet()">Connect Xaman Wallet</button>
 <div id="walletBox" style="margin-top:15px;font-size:16px;"></div>
 
-<!-- NEW: Split uploads (add-only, no regressions) -->
-<label>Upload Cover Image (recommended)</label>
-<input type="file" id="imageInput" accept="image/*">
+<label>Upload Cover Image (required)</label>
+<input type="file" id="fileInput" accept="image/*">
 
-<label>Upload HTML Content (recommended)</label>
+<label>Upload HTML Content (optional)</label>
 <input type="file" id="htmlInput" accept=".html,text/html">
-
-<!-- Existing legacy field kept EXACTLY (no regression) -->
-<label>Upload File (Image, HTML file)</label>
-<input type="file" id="fileInput">
 
 <label>NFT Name</label>
 <input type="text" id="nftName" maxlength="100">
@@ -343,48 +338,23 @@ async function loadStatus() {
 
 async function submitNFT() {
     if (!userWallet) return alert("Please connect your wallet.");
-
-    // NEW: Two-file support (add-only, legacy preserved)
-    const imageFile = document.getElementById("imageInput").files[0];
-    const htmlFile  = document.getElementById("htmlInput").files[0];
-    const legacyFile = document.getElementById("fileInput").files[0];
-
+    const file = document.getElementById("fileInput").files[0];
+    const htmlFile = document.getElementById("htmlInput").files[0];
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
-
-    // Legacy required checks preserved: name + description required
-    if (!name || !description)
+    if (!file || !name || !description)
         return alert("Fill all required fields.");
 
-    // If user does not use new fields, legacy still works
-    if ((!imageFile || !htmlFile) && !legacyFile) {
-        return alert("Upload cover image + HTML file, or use the legacy upload.");
-    }
+    const fd = new FormData();
+    fd.append("file", file);
+    const upload = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fd })).json();
 
-    // Upload cover image (or legacy file if used)
-    let imageCid = null;
     let htmlCid = null;
-
-    if (imageFile) {
-        const fdImg = new FormData();
-        fdImg.append("file", imageFile);
-        const upImg = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fdImg })).json();
-        imageCid = upImg.cid;
-    }
-
     if (htmlFile) {
         const fdHtml = new FormData();
         fdHtml.append("file", htmlFile);
         const upHtml = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fdHtml })).json();
         htmlCid = upHtml.cid;
-    }
-
-    // Legacy fallback: if imageCid is missing but legacy file exists, use legacy as the image
-    if (!imageCid && legacyFile) {
-        const fdLegacy = new FormData();
-        fdLegacy.append("file", legacyFile);
-        const upLegacy = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fdLegacy })).json();
-        imageCid = upLegacy.cid;
     }
 
     // --------------------------
@@ -402,21 +372,18 @@ async function submitNFT() {
         quantity: document.getElementById("quantity").value,
         price_xrp: cleanNum(document.getElementById("priceXRP").value),
         price_rlusd: cleanNum(document.getElementById("priceRLUSD").value),
-        image: "ipfs://" + imageCid,
-
-        // NEW: store HTML content separately when provided
+        image: "ipfs://" + upload.cid,
         content_html: htmlCid ? ("ipfs://" + htmlCid) : null,
     };
+const learnEnabled = document.getElementById("enableLearn").checked;
+const learnText = document.getElementById("learnText").value;
 
-    const learnEnabled = document.getElementById("enableLearn").checked;
-    const learnText = document.getElementById("learnText").value;
-
-    if (learnEnabled && learnText.trim()) {
-        metadata.learn = {
-            enabled: true,
-            content: learnText
-        };
-    }
+if (learnEnabled && learnText.trim()) {
+    metadata.learn = {
+        enabled: true,
+        content: learnText
+    };
+}
 
     const fd2 = new FormData();
     fd2.append("file",
@@ -432,10 +399,7 @@ async function submitNFT() {
             wallet:userWallet,
             name,
             description,
-
-            // CHANGED: use computed imageCid
-            imageCid: imageCid,
-
+            imageCid: upload.cid,
             metadataCid: md.cid,
             quantity: document.getElementById("quantity").value,
             metadata: JSON.stringify({
@@ -449,11 +413,8 @@ async function submitNFT() {
     document.getElementById("result").innerHTML =
         `<div class="success">NFT Submitted!</div>`;
 
-    // Clear inputs (add-only)
-    document.getElementById("imageInput").value = "";
-    document.getElementById("htmlInput").value = "";
-
     document.getElementById("fileInput").value = "";
+    document.getElementById("htmlInput").value = "";
     document.getElementById("nftName").value = "";
     document.getElementById("nftDescription").value = "";
     document.getElementById("nftTerms").value = "";
