@@ -107,8 +107,20 @@
 
 <label>Description</label>
 <textarea id="nftDescription" rows="4" maxlength="750"></textarea>
+    <label>Category</label>
+<select id="nftCategory" required>
+  <option value="all">All</option>
+  <option value="services">Services</option>
+  <option value="workshops">Workshops</option>
+  <option value="books">Books</option>
+  <option value="art">Art</option>
+</select>
 <div id="countDescription" class="char-counter">0 / 750</div>
-<!-- ============================= -->
+    
+<!-- <label>Description</label>
+<textarea id="nftDescription" rows="4" maxlength="750"></textarea>
+<div id="countDescription" class="char-counter">0 / 750</div>
+============================= -->
 <!-- LEARN-TO-EARN (OPTIONAL) -->
 <!-- ============================= -->
 
@@ -365,16 +377,18 @@ async function submitNFT() {
         return n > 0 ? n : null;
     }
 
-    const metadata = {
-        name,
-        description,
-        terms: document.getElementById("nftTerms").value,
-        quantity: document.getElementById("quantity").value,
-        price_xrp: cleanNum(document.getElementById("priceXRP").value),
-        price_rlusd: cleanNum(document.getElementById("priceRLUSD").value),
-        image: "ipfs://" + upload.cid,
-        content_html: htmlCid ? ("ipfs://" + htmlCid) : null,
-    };
+ const metadata = {
+    name,
+    description,
+    category: document.getElementById("nftCategory").value,
+    terms: document.getElementById("nftTerms").value,
+    quantity: document.getElementById("quantity").value,
+    price_xrp: cleanNum(document.getElementById("priceXRP").value),
+    price_rlusd: cleanNum(document.getElementById("priceRLUSD").value),
+    image: "ipfs://" + upload.cid,
+    content_html: htmlCid ? ("ipfs://" + htmlCid) : null,
+};
+
 const learnEnabled = document.getElementById("enableLearn").checked;
 const learnText = document.getElementById("learnText").value;
 
@@ -403,10 +417,11 @@ if (learnEnabled && learnText.trim()) {
             metadataCid: md.cid,
             quantity: document.getElementById("quantity").value,
             metadata: JSON.stringify({
-                terms: metadata.terms,
-                price_xrp: metadata.price_xrp,
-                price_rlusd: metadata.price_rlusd
-            })
+    terms: metadata.terms,
+    price_xrp: metadata.price_xrp,
+    price_rlusd: metadata.price_rlusd,
+    category: metadata.category
+})
         })
     });
 
