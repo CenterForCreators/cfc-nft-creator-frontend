@@ -92,6 +92,23 @@
   font-size: 16px;
   background: #fff;
 }
+ .delist-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 13px;
+  padding: 6px 10px;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.delist-btn.relist {
+  background: #28a745;
+}
+   
 </style>
 </head>
 
@@ -488,13 +505,14 @@ async function loadMintedGallery() {
         const desc = md?.description || nft.description;
         const terms = md?.terms || "—";
         html += `
-            <div style="
-                background:#fafafa;
-                padding:15px;
-                margin-bottom:15px;
-                border-radius:10px;
-                border-left:5px solid #28A745;
-            ">
+    <div style="
+        background:#fafafa;
+        padding:15px;
+        margin-bottom:15px;
+        border-radius:10px;
+        border-left:5px solid #28A745;
+        position:relative;
+    ">
                 <img src="https://gateway.pinata.cloud/ipfs/${nft.image_cid}"
                      style="width:120px;border-radius:6px;margin-bottom:10px;">
 
@@ -520,6 +538,12 @@ async function loadMintedGallery() {
                    style="display:inline-block;margin-top:8px;font-size:14px;">
                    View Metadata →
                 </a>
+                       <button
+  class="delist-btn"
+  onclick="toggleDelist(${nft.id}, this)">
+  Delist
+</button>
+
             </div>
         `;
     }
@@ -602,6 +626,23 @@ function sendHeight() {
 
 setInterval(sendHeight, 500);
 window.onload = sendHeight;
+  function toggleDelist(id, btn){
+  const isDelisted = btn.classList.contains("relist");
+  const action = isDelisted ? "Relist" : "Delist";
+
+  if (!confirm(`Are you sure you want to ${action} this NFT?`)) return;
+
+  if (isDelisted){
+    btn.classList.remove("relist");
+    btn.textContent = "Delist";
+  } else {
+    btn.classList.add("relist");
+    btn.textContent = "Relist";
+  }
+
+  // UI only for now — backend hook can be added later
+}
+  
 </script>
 
 </body>
