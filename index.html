@@ -262,14 +262,20 @@ async function fetchMetadata(cid) {
 }
 async function checkXummPaymentFromStorage() {
   const uuid = localStorage.getItem(PAY_UUID_KEY);
-  if (!uuid) return;
+  const submissionId = localStorage.getItem(PAY_SUB_KEY);
+  if (!uuid || !submissionId) return;
 
   try {
     const payload = await xumm.payload.get(uuid);
 
     if (payload && (payload.signed || payload.meta?.signed)) {
+      // ✅ mark “paid” locally for THIS submission
+      localStorage.setItem("cfc_paid_" + submissionId, "1");
+
+      // cleanup
       localStorage.removeItem(PAY_UUID_KEY);
-      await loadStatus(); // refresh UI → shows Mint button
+
+      await loadStatus(); // refresh UI so Mint button appears
     }
   } catch (e) {}
 }
@@ -351,10 +357,9 @@ async function loadStatus() {
                 <a href="https://gateway.pinata.cloud/ipfs/${sub.metadata_cid}" target="_blank">View</a>
             </div>
         `;
-       if (sub.status === "approved") {
-    html += `<button onclick="payNow(${sub.id})">Pay 1 XRP Mint Fee</button>`;
-    html += `<button onclick="mintNow(${sub.id})">Mint NFT</button>`;
-}
+     if (sub.status === "approved" && sub.payment_status === "unpaid") {
+  html += `<button onclick="payNow(${sub.id})">Pay 1 XRP Mint Fee</button>`;
+} 
         if (sub.mint_status === "minted") {
             html += `<div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>`;
         }
