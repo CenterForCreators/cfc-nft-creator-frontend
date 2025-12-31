@@ -276,6 +276,7 @@ async function checkXummPaymentFromStorage() {
             });
             const data = await res.json();
             localStorage.removeItem(PAY_UUID_KEY);
+            localStorage.removeItem(PAY_SUB_KEY);
             if (data.mintCreated && data.mintLink) {
                 localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
                 window.open(data.mintLink, "_blank");
