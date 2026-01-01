@@ -391,6 +391,7 @@ async function submitNFT() {
     // Wallet check
     if (!userWallet) {
         resultBox.innerHTML = `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">Please connect your wallet.</div>`;
+        setTimeout(() => { resultBox.innerHTML = ""; }, 3000);
         submitBtn.classList.remove("disabled");
         submitBtn.innerText = "Submit NFT for Approval";
         return;
@@ -401,10 +402,24 @@ async function submitNFT() {
     const htmlFile = document.getElementById("htmlInput").files[0];
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
-    const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value;
+const category = document.getElementById("nftCategory").value;
+const quantity = document.getElementById("quantity").value;
+const priceXRP = document.getElementById("priceXRP").value;
+const priceRLUSD = document.getElementById("priceRLUSD").value;
 
-    if (!file || !name || !description || !email) {
+   if (
+  !file ||
+  !name ||
+  !description ||
+  !email ||
+  !category ||
+  !quantity ||
+  (!priceXRP && !priceRLUSD)
+) {
+
         resultBox.innerHTML = `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">Please complete all required fields.</div>`;
+        setTimeout(() => { resultBox.innerHTML = ""; }, 3000);
         submitBtn.classList.remove("disabled");
         submitBtn.innerText = "Submit NFT for Approval";
         return;
