@@ -380,6 +380,9 @@ async function loadStatus() {
 
 async function submitNFT() {
         const submitBtn = document.getElementById("submitBtn");
+    submitBtn.classList.add("disabled");
+submitBtn.disabled = true;
+submitBtn.textContent = "Submitting…";
     
    if (!userWallet) {
     submitBtn.classList.remove("disabled");
@@ -398,10 +401,6 @@ async function submitNFT() {
         submitBtn.textContent = "Submit NFT for Approval";
         return alert("Please fill in all required fields (image, name, description, email).");
     }
-submitBtn.classList.add("disabled");
-submitBtn.disabled = true;
-submitBtn.textContent = "Submitting…";
-
 
     const fd = new FormData();
     fd.append("file", file);
