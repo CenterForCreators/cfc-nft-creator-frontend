@@ -380,23 +380,52 @@ async function loadStatus() {
 }
 
 async function submitNFT() {
-    if (!userWallet) return alert("Please connect your wallet.");
+    const submitBtn = document.getElementById("submitBtn");
+    const resultBox = document.getElementById("result");
+
+    // Immediate visual feedback
+    submitBtn.classList.add("disabled");
+    submitBtn.innerText = "Submitting...";
+    resultBox.innerHTML = "";
+
+    // Wallet check
+    if (!userWallet) {
+        resultBox.innerHTML = `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">Please connect your wallet.</div>`;
+        submitBtn.classList.remove("disabled");
+        submitBtn.innerText = "Submit NFT for Approval";
+        return;
+    }
+
+    // Required fields check (THIS was missing)
     const file = document.getElementById("fileInput").files[0];
     const htmlFile = document.getElementById("htmlInput").files[0];
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
-    if (!file || !name || !description)
-        return alert("Fill all required fields.");
+    const email = document.getElementById("email").value;
 
+    if (!file || !name || !description || !email) {
+        resultBox.innerHTML = `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">Please complete all required fields.</div>`;
+        submitBtn.classList.remove("disabled");
+        submitBtn.innerText = "Submit NFT for Approval";
+        return;
+    }
+    // Upload image
     const fd = new FormData();
     fd.append("file", file);
-    const upload = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fd })).json();
+    const upload = await (await fetch(BACKEND + "api/upload", {
+        method: "POST",
+        body: fd
+    })).json();
 
+    // Optional HTML upload
     let htmlCid = null;
     if (htmlFile) {
         const fdHtml = new FormData();
         fdHtml.append("file", htmlFile);
-        const upHtml = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fdHtml })).json();
+        const upHtml = await (await fetch(BACKEND + "api/upload", {
+            method: "POST",
+            body: fdHtml
+        })).json();
         htmlCid = upHtml.cid;
     }
 
@@ -459,6 +488,8 @@ if (learnEnabled && learnText.trim()) {
 
     document.getElementById("result").innerHTML =
         `<div class="success">NFT Submitted!</div>`;
+        submitBtn.classList.remove("disabled");
+    submitBtn.innerText = "Submit NFT for Approval";
 
     document.getElementById("fileInput").value = "";
     document.getElementById("htmlInput").value = "";
