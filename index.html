@@ -132,13 +132,13 @@
 <label>Upload HTML Content (optional)</label>
 <input type="file" id="htmlInput" accept=".html,text/html">
 
-<label>NFT Name</label>
+<label>NFT Name <span style="color:#d9534f;">(required)</span></label>
 <input type="text" id="nftName" maxlength="100">
 <div id="countName" class="char-counter">0 / 100</div>
 
-<label>Description</label>
+<label>Description <span style="color:#d9534f;">(required)</span></label>
 <textarea id="nftDescription" rows="4" maxlength="750"></textarea>
-    <label>Category</label>
+    <label>Category <span style="color:#d9534f;">(required)</span></label>
 <select id="nftCategory" required>
   <option value="all">All</option>
   <option value="services">Services</option>
@@ -200,13 +200,13 @@ Question 1: Explain self-custody."
   placeholder="https://yourwebsite.com"
 />
 
-<label>Quantity (1–100)</label>
+<label>Quantity (1–100) <span style="color:#d9534f;">(required)</span></label>
 <input type="number" id="quantity" min="1" max="100" oninput="if (this.value > 100) this.value = 100;">
 
-<label>Price (XRP)</label>
+<label>Price (XRP) <span style="color:#d9534f;">(required)</span></label>
 <input type="number" id="priceXRP">
 
-<label>Price (RLUSD)</label>
+<label>Price (RLUSD) <span style="color:#d9534f;">(required)</span></label>
 <input type="number" id="priceRLUSD">
 
 <label>Marketplace Fee</label>
