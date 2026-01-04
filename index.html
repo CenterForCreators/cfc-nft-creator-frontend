@@ -224,7 +224,42 @@ Question 1: Explain self-custody."
 </div>
 
 <div id="statusPanel" class="status-panel"></div>
+<script>  
+// ------------------------------
+// ENABLE LIST-ON-MARKETPLACE AFTER MINT
+// ------------------------------
+const listBtn = document.getElementById("listMarketplaceBtn");
 
+if (listBtn) {
+  listBtn.disabled = false;
+  listBtn.style.opacity = "1";
+  listBtn.style.cursor = "pointer";
+}
+// ------------------------------
+// LIST ON MARKETPLACE CLICK
+// ------------------------------
+document
+  .getElementById("listMarketplaceBtn")
+  ?.addEventListener("click", async () => {
+
+    if (document.getElementById("listMarketplaceBtn").disabled) {
+      alert("Please mint the NFT before listing it on the marketplace.");
+      return;
+    }
+
+    // call your existing add-nft endpoint
+    await fetch(
+      "https://cfc-nft-shared-mint-backend.onrender.com/api/add-nft",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(window.lastMintedNFT) // already created during mint
+      }
+    );
+
+    alert("NFT listed on marketplace");
+  });
+</script>
 <h2 style="margin-top:40px;">My Minted NFTs</h2>
 <div id="mintedGallery"></div>
 
@@ -296,6 +331,7 @@ async function checkXummMintFromStorage() {
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid:mintUuid })
             });
+            window.lastMintedNFT = { submission_id: Number(submissionId) };
             localStorage.removeItem(MINT_UUID_KEY);
             await loadStatus();
         }
@@ -364,12 +400,21 @@ async function loadStatus() {
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
             html += `<button onclick="payNow(${sub.id})">Pay 1 XRP Mint Fee</button>`;
         }
-        if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
-            html += `<button onclick="mintNow(${sub.id})">Mint NFT</button>`;
-        }
-        if (sub.mint_status === "minted") {
-            html += `<div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>`;
-        }
+       if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
+    html += `<button onclick="mintNow(${sub.id})">Mint NFT</button>`;
+}
+
+if (sub.mint_status === "minted") {
+    html += `
+      <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
+      <button
+        style="margin-top:12px;"
+        onclick="listOnMarketplace(${sub.id})"
+      >
+        List on Marketplace
+      </button>
+    `;
+}
         html += `</div>`;
     });
     document.getElementById("statusPanel").innerHTML = html;
