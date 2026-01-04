@@ -253,7 +253,8 @@ document
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(window.lastMintedNFT) // already created during mint
+        body: JSON.stringify({ submission_id: window.lastMintedNFT.submission_id })
+ // already created during mint
       }
     );
 
