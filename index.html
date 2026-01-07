@@ -402,9 +402,13 @@ async function loadStatus() {
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
             html += `<button onclick="payNow(${sub.id})">Pay 1 XRP Mint Fee</button>`;
         }
-       if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
-    html += `<button onclick="mintNow(${sub.id})">Mint NFT</button>`;
+      if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
+  html += `
+    <button onclick="mintNow(${sub.id})">Mint NFT</button>
+    <button class="disabled" disabled>List on Marketplace</button>
+  `;
 }
+
 
 if (sub.mint_status === "minted") {
     html += `
@@ -585,6 +589,25 @@ async function mintNow(id) {
     const d = await r.json();
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
     window.open(d.link, "_blank");
+}
+async function listOnMarketplace(submissionId) {
+  const r = await fetch(
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/add-nft",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ submission_id: submissionId })
+    }
+  );
+
+  const d = await r.json();
+  if (!r.ok) {
+    alert(d?.error || "Failed to list on marketplace");
+    return;
+  }
+
+  alert("Listed on marketplace ✅");
+  await loadStatus();
 }
 
 async function loadMintedGallery() {
