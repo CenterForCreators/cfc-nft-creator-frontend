@@ -592,15 +592,24 @@ async function mintNow(id) {
 }
 async function listOnMarketplace(submissionId) {
   const r = await fetch(
-    "https://cfc-nft-shared-mint-backend.onrender.com/api/add-nft",
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ submission_id: submissionId })
+      body: JSON.stringify({
+        submission_id: submissionId,
+        wallet: userWallet
+      })
     }
   );
 
   const d = await r.json();
+
+  if (d?.xumm_link) {
+    window.open(d.xumm_link, "_blank");
+    return;
+  }
+
   if (!r.ok) {
     document.getElementById("result").innerHTML =
       `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">
