@@ -602,11 +602,18 @@ async function listOnMarketplace(submissionId) {
 
   const d = await r.json();
   if (!r.ok) {
-    alert(d?.error || "Failed to list on marketplace");
+    document.getElementById("result").innerHTML =
+      `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">
+        ${d?.error || "Failed to list on marketplace"}
+      </div>`;
     return;
   }
 
-  alert("Listed on marketplace ✅");
+  document.getElementById("result").innerHTML =
+    `<div class="success">
+      Listed on marketplace ✅
+    </div>`;
+
   await loadStatus();
 }
 
