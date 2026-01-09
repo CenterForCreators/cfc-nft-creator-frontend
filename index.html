@@ -578,20 +578,21 @@ async function payNow(submissionId) {
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
     window.open(d.link, "_blank");
 }
-
 async function mintNow(id) {
-    const r = await fetch(BACKEND + "api/start-mint", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
-    });
+  const r = await fetch(BACKEND + "api/start-mint", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  });
 
-    const d = await r.json();
+  if (!r.ok) {
+    alert("Mint failed. Please try again.");
+    return;
+  }
 
-    if (!d?.link) {
-        alert("Mint failed. Please try again.");
-        return;
-    }
+  alert("Minting started. Your NFTs will appear shortly.");
+  await loadStatus();
+}
 
     window.location.href = d.link;
 }
