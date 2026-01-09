@@ -582,15 +582,25 @@ async function payNow(submissionId) {
 }
 
 async function mintNow(id) {
-    const r = await fetch(BACKEND + "api/start-mint", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ id })
-    });
-    const d = await r.json();
-    localStorage.setItem(MINT_UUID_KEY, d.uuid);
-    window.open(d.link, "_blank");
+  const r = await fetch(BACKEND + "api/start-full-mint", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  });
+
+  if (!r.ok) {
+    alert("Failed to start mint flow.");
+    return;
+  }
+
+  const d = await r.json();
+
+  // STEP 1 — PAY XRP (opens Xaman)
+  window.open(d.step1, "_blank");
+
+  // STEP 2 + 3 handled by Xaman sequence after return
 }
+
 async function listOnMarketplace(submissionId) {
   const r = await fetch(
     "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
