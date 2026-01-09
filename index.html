@@ -351,6 +351,7 @@ async function connectWallet() {
         document.getElementById("connectBtn").onclick = disconnectWallet;
         await loadStatus();
         await checkXummPaymentFromStorage();
+        await checkXummMintFromStorage();
     }
 }
 
@@ -582,24 +583,17 @@ async function payNow(submissionId) {
 
 async function mintNow(id) {
     const r = await fetch(BACKEND + "api/start-mint", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ id })
     });
-
     const d = await r.json();
-
-    if (!d?.link) {
-        alert("Mint failed. Please try again.");
-        return;
-    }
-
-    window.location.href = d.link;
+    localStorage.setItem(MINT_UUID_KEY, d.uuid);
+    window.open(d.link, "_blank");
 }
-
 async function listOnMarketplace(submissionId) {
   const r = await fetch(
-    "https://cfc-nft-shared-mint-backend.onrender.com/api/list-for-sale",
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
