@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -351,6 +352,7 @@ async function connectWallet() {
         await loadStatus();
         await checkXummPaymentFromStorage();
     }
+}
 
 function disconnectWallet() {
     xumm.logout();
@@ -577,21 +579,20 @@ async function payNow(submissionId) {
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
     window.open(d.link, "_blank");
 }
+
 async function mintNow(id) {
-  const r = await fetch(BACKEND + "api/start-mint", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id })
-  });
+    const r = await fetch(BACKEND + "api/start-mint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+    });
 
-  if (!r.ok) {
-    alert("Mint failed. Please try again.");
-    return;
-  }
+    const d = await r.json();
 
-  alert("Minting started. Your NFTs will appear shortly.");
-  await loadStatus();
-}
+    if (!d?.link) {
+        alert("Mint failed. Please try again.");
+        return;
+    }
 
     window.location.href = d.link;
 }
