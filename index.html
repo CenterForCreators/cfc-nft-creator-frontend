@@ -271,6 +271,20 @@ async function checkXummPaymentFromStorage() {
                 body:JSON.stringify({ id:Number(submissionId), uuid })
             });
             const data = await res.json();
+                        // ✅ AUTO-CONTINUE: start mint immediately after payment is marked paid
+            const mintRes = await fetch(BACKEND + "api/start-mint", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: Number(submissionId) })
+            });
+
+            const mintData = await mintRes.json();
+
+            if (mintData?.uuid && mintData?.link) {
+              localStorage.setItem(MINT_UUID_KEY, mintData.uuid);
+              window.open(mintData.link, "_blank");
+            }
+
             localStorage.removeItem(PAY_UUID_KEY);
             if (data.mintCreated && data.mintLink) {
                 localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
@@ -309,7 +323,6 @@ async function connectWallet() {
         document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
         document.getElementById("connectBtn").onclick = disconnectWallet;
         await loadStatus();
-        await checkXummPaymentFromStorage();
         await checkXummPaymentFromStorage();
         await checkXummMintFromStorage();
     }
@@ -363,10 +376,11 @@ async function loadStatus() {
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
             html += `<button onclick="payNow(${sub.id})">Mint Your NFT</button>`;
         }
-     if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
+    if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
   html += `
-    <button onclick="mintNow(${sub.id})">Mint NFT</button>
-    <button class="disabled" disabled>List on Marketplace</button>
+    <div style="margin-top:10px;color:#666;font-weight:bold;">
+      Payment received ✔ — continuing in Xaman…
+    </div>
   `;
 }
 
