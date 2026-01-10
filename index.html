@@ -555,29 +555,6 @@ async function mintNow(id) {
 }
 
 
-  const d = await r.json();
-
-  if (d?.xumm_link) {
-    window.open(d.xumm_link, "_blank");
-    return;
-  }
-
-  if (!r.ok) {
-    document.getElementById("result").innerHTML =
-      `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">
-        ${d?.error || "Failed to list on marketplace"}
-      </div>`;
-    return;
-  }
-
-  document.getElementById("result").innerHTML =
-    `<div class="success">
-      Listed on marketplace ✅
-    </div>`;
-
-  await loadStatus();
-}
-
 async function loadMintedGallery() {
     if (!userWallet) return;
     const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
