@@ -360,7 +360,7 @@ async function loadStatus() {
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
             html += `<button onclick="payNow(${sub.id})">Mint Your NFT</button>`;
         }
-      if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
+     if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
   html += `
     <button onclick="mintNow(${sub.id})">Mint NFT</button>
     <button class="disabled" disabled>List on Marketplace</button>
