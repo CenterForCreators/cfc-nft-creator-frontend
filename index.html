@@ -226,6 +226,8 @@ Question 1: Explain self-custody."
 </div>
 
 <div id="statusPanel" class="status-panel"></div>
+    <h2 style="margin-top:40px;">My NFTs</h2>
+<div id="mintedGallery"></div>
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
 
@@ -536,7 +538,7 @@ async function payNow(submissionId) {
 }
 
 async function mintNow(id) {
-  const r = await fetch(BACKEND + "api/start-full-mint", {
+  const r = await fetch(BACKEND + "api/start-mint", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id })
