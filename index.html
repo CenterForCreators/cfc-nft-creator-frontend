@@ -313,6 +313,12 @@ async function checkXummMintFromStorage() {
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid:mintUuid })
             });
+            // AUTO-CONTINUE AFTER MINT → SELL OFFER
+const mintSubmissionId = submissionId;
+if (mintSubmissionId) {
+  localStorage.removeItem("MINT_SUBMISSION_ID");
+  await startSellOffer(mintSubmissionId);
+}
             window.lastMintedNFT = { submission_id: Number(submissionId) };
             localStorage.removeItem(MINT_UUID_KEY);
             await loadStatus();
@@ -554,6 +560,7 @@ async function payNow(submissionId) {
     const d = await r.json();
     localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
+    localStorage.setItem("MINT_SUBMISSION_ID", id);
     window.open(d.link, "_blank");
 }
 
@@ -574,6 +581,21 @@ async function mintNow(id) {
   // STEP 1 — PAY XRP (opens Xaman)
     localStorage.setItem("PAID_SUBMISSION_ID", id);
   window.open(d.step1, "_blank");
+async function startSellOffer(submissionId) {
+  const r = await fetch(BACKEND + "api/start-sell-offer", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: Number(submissionId),
+      currency: "RLUSD" // RLUSD first, XRP fallback handled backend
+    })
+  });
+
+  const d = await r.json();
+  if (!d?.link) return;
+
+  window.open(d.link, "_blank");
+}
 
   // STEP 2 + 3 handled by Xaman sequence after return
 }
