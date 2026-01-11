@@ -270,6 +270,12 @@ async function checkXummPaymentFromStorage() {
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid })
             });
+            // AUTO-CONTINUE AFTER PAYMENT
+const paidSubmissionId = localStorage.getItem("PAID_SUBMISSION_ID");
+if (paidSubmissionId) {
+  localStorage.removeItem("PAID_SUBMISSION_ID");
+  await mintNow(paidSubmissionId);
+}
             const data = await res.json();
                         // ✅ AUTO-CONTINUE: start mint immediately after payment is marked paid
             const mintRes = await fetch(BACKEND + "api/start-mint", {
@@ -566,6 +572,7 @@ async function mintNow(id) {
   const d = await r.json();
 
   // STEP 1 — PAY XRP (opens Xaman)
+    localStorage.setItem("PAID_SUBMISSION_ID", id);
   window.open(d.step1, "_blank");
 
   // STEP 2 + 3 handled by Xaman sequence after return
