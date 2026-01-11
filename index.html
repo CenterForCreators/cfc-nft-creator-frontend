@@ -560,7 +560,7 @@ async function payNow(submissionId) {
     const d = await r.json();
     localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
-    localStorage.setItem("MINT_SUBMISSION_ID", id);
+    localStorage.setItem("MINT_SUBMISSION_ID", submissionId);
     window.open(d.link, "_blank");
 }
 
