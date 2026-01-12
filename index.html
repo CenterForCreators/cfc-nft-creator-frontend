@@ -324,7 +324,7 @@ if (mintSubmissionId) {
             await loadStatus();
         }
     } catch(e){}
-
+}
 async function connectWallet() {
     const popup = await xumm.authorize();
     if (popup.me?.account) {
@@ -600,8 +600,6 @@ async function startSellOffer(submissionId) {
 }
 
   // STEP 2 + 3 handled by Xaman sequence after return
-}
-
 
 async function loadMintedGallery() {
     if (!userWallet) return;
