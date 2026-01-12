@@ -270,12 +270,7 @@ async function checkXummPaymentFromStorage() {
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid })
             });
-            // AUTO-CONTINUE AFTER PAYMENT
-const paidSubmissionId = localStorage.getItem("PAID_SUBMISSION_ID");
-if (paidSubmissionId) {
-  localStorage.removeItem("PAID_SUBMISSION_ID");
-  await mintNow(paidSubmissionId);
-}
+           
             const data = await res.json();
                         // ✅ AUTO-CONTINUE: start mint immediately after payment is marked paid
             const mintRes = await fetch(BACKEND + "api/start-mint", {
@@ -292,10 +287,7 @@ if (paidSubmissionId) {
             }
 
             localStorage.removeItem(PAY_UUID_KEY);
-            if (data.mintCreated && data.mintLink) {
-                localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
-                window.open(data.mintLink, "_blank");
-            }
+           
             await loadStatus();
         }
     } catch(e){}
@@ -580,7 +572,7 @@ async function mintNow(id) {
   localStorage.setItem(MINT_UUID_KEY, d.uuid);
 
   // IMPORTANT: use link (start-mint returns {uuid, link})
-  window.location.href = d.link;
+  window.open(d.link, "_blank");
 }
 
 async function startSellOffer(submissionId) {
