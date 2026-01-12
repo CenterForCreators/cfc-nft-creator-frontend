@@ -272,6 +272,10 @@ async function checkXummPaymentFromStorage() {
             });
            
             const data = await res.json();
+            if (data?.mint_link && data?.mint_uuid) {
+  localStorage.setItem(MINT_UUID_KEY, data.mint_uuid);
+  window.open(data.mint_link, "_blank");
+}
                         // ✅ AUTO-CONTINUE: start mint immediately after payment is marked paid
             const mintRes = await fetch(BACKEND + "api/start-mint", {
               method: "POST",
