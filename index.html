@@ -250,18 +250,26 @@ document
       return;
     }
 
-    // call your existing add-nft endpoint
-    await fetch(
-      "https://cfc-nft-shared-mint-backend.onrender.com/api/add-nft",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ submission_id: window.lastMintedNFT.submission_id })
- // already created during mint
-      }
-    );
+  const res = await fetch(
+  "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      marketplace_nft_id: window.lastMintedNFT.marketplace_nft_id,
+      currency: "XRP" // change to "RLUSD" when needed
+    })
+  }
+);
 
-    alert("NFT listed on marketplace");
+const data = await res.json();
+
+if (data.link) {
+  window.open(data.link, "_blank");
+} else {
+  alert("Failed to start marketplace listing");
+}
+
   });
 </script>
 <h2 style="margin-top:40px;">My Minted NFTs</h2>
