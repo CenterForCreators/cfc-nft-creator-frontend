@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -226,8 +227,49 @@ Question 1: Explain self-custody."
 </div>
 
 <div id="statusPanel" class="status-panel"></div>
-    <h2 style="margin-top:40px;">My NFTs</h2>
+<script>  
+// ------------------------------
+// ENABLE LIST-ON-MARKETPLACE AFTER MINT
+// ------------------------------
+const listBtn = document.getElementById("listMarketplaceBtn");
+
+if (listBtn) {
+  listBtn.disabled = false;
+  listBtn.style.opacity = "1";
+  listBtn.style.cursor = "pointer";
+}
+// ------------------------------
+// LIST ON MARKETPLACE CLICK
+// ------------------------------
+document
+  .getElementById("listMarketplaceBtn")
+  ?.addEventListener("click", async () => {
+
+    if (document.getElementById("listMarketplaceBtn").disabled) {
+      alert("Please mint the NFT before listing it on the marketplace.");
+      return;
+    }
+
+    // call your existing add-nft endpoint
+    await fetch(
+      "https://cfc-nft-shared-mint-backend.onrender.com/api/add-nft",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submission_id: window.lastMintedNFT.submission_id })
+ // already created during mint
+      }
+    );
+
+    alert("NFT listed on marketplace");
+  });
+</script>
+<h2 style="margin-top:40px;">My Minted NFTs</h2>
 <div id="mintedGallery"></div>
+
+</div>
+</div>
+
 <script>
 const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
 
@@ -270,28 +312,12 @@ async function checkXummPaymentFromStorage() {
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid })
             });
-           
             const data = await res.json();
-            if (data?.mint_link && data?.mint_uuid) {
-  localStorage.setItem(MINT_UUID_KEY, data.mint_uuid);
-  window.open(data.mint_link, "_blank");
-}
-                        // ✅ AUTO-CONTINUE: start mint immediately after payment is marked paid
-            const mintRes = await fetch(BACKEND + "api/start-mint", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: Number(submissionId) })
-            });
-
-            const mintData = await mintRes.json();
-
-            if (mintData?.uuid && mintData?.link) {
-              localStorage.setItem(MINT_UUID_KEY, mintData.uuid);
-              window.open(mintData.link, "_blank");
-            }
-
             localStorage.removeItem(PAY_UUID_KEY);
-           
+            if (data.mintCreated && data.mintLink) {
+                localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
+                window.open(data.mintLink, "_blank");
+            }
             await loadStatus();
         }
     } catch(e){}
@@ -309,18 +335,13 @@ async function checkXummMintFromStorage() {
                 headers:{ "Content-Type":"application/json" },
                 body:JSON.stringify({ id:Number(submissionId), uuid:mintUuid })
             });
-            // AUTO-CONTINUE AFTER MINT → SELL OFFER
-const mintSubmissionId = submissionId;
-if (mintSubmissionId) {
-  localStorage.removeItem("MINT_SUBMISSION_ID");
-  await startSellOffer(mintSubmissionId);
-}
             window.lastMintedNFT = { submission_id: Number(submissionId) };
             localStorage.removeItem(MINT_UUID_KEY);
             await loadStatus();
         }
     } catch(e){}
 }
+
 async function connectWallet() {
     const popup = await xumm.authorize();
     if (popup.me?.account) {
@@ -383,22 +404,25 @@ async function loadStatus() {
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
             html += `<button onclick="payNow(${sub.id})">Mint Your NFT</button>`;
         }
-    if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
+      if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
   html += `
-    <div style="margin-top:10px;color:#666;font-weight:bold;">
-      Payment received ✔ — continuing in Xaman…
-    </div>
+    <button onclick="mintNow(${sub.id})">Mint NFT</button>
+    <button class="disabled" disabled>List on Marketplace</button>
   `;
 }
 
+
 if (sub.mint_status === "minted") {
     html += `
-      <div style="margin-top:10px;color:#28A745;font-weight:bold;">
-        Minted ✔ — Ready for sale on marketplace
-      </div>
+      <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
+      <button
+        style="margin-top:12px;"
+        onclick="listOnMarketplace(${sub.id})"
+      >
+        List on Marketplace
+      </button>
     `;
 }
-
         html += `</div>`;
     });
     document.getElementById("statusPanel").innerHTML = html;
@@ -555,47 +579,54 @@ async function payNow(submissionId) {
     const d = await r.json();
     localStorage.setItem(PAY_UUID_KEY, d.uuid);
     localStorage.setItem(PAY_SUB_KEY, String(submissionId));
-    localStorage.setItem("PAID_SUBMISSION_ID", String(submissionId));
     window.open(d.link, "_blank");
 }
 
 async function mintNow(id) {
-  const r = await fetch(BACKEND + "api/start-mint", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: Number(id) })
-  });
+    const r = await fetch(BACKEND + "api/start-mint", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ id })
+    });
+    const d = await r.json();
+    localStorage.setItem(MINT_UUID_KEY, d.uuid);
+    window.open(d.link, "_blank");
+}
+async function listOnMarketplace(submissionId) {
+  const r = await fetch(
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        submission_id: submissionId,
+        wallet: userWallet
+      })
+    }
+  );
 
   const d = await r.json();
 
-  if (!r.ok || !d.uuid || !d.link) {
-    alert(d.error || "Failed to start mint.");
+  if (d?.xumm_link) {
+    window.open(d.xumm_link, "_blank");
     return;
   }
 
-  localStorage.setItem(MINT_UUID_KEY, d.uuid);
+  if (!r.ok) {
+    document.getElementById("result").innerHTML =
+      `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">
+        ${d?.error || "Failed to list on marketplace"}
+      </div>`;
+    return;
+  }
 
-  // IMPORTANT: use link (start-mint returns {uuid, link})
-  window.open(d.link, "_blank");
+  document.getElementById("result").innerHTML =
+    `<div class="success">
+      Listed on marketplace ✅
+    </div>`;
+
+  await loadStatus();
 }
-
-async function startSellOffer(submissionId) {
-  const r = await fetch(BACKEND + "api/start-sell-offer", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: Number(submissionId),
-      currency: "RLUSD" // RLUSD first, XRP fallback handled backend
-    })
-  });
-
-  const d = await r.json();
-  if (!d?.link) return;
-
-  window.open(d.link, "_blank");
-}
-
-  // STEP 2 + 3 handled by Xaman sequence after return
 
 async function loadMintedGallery() {
     if (!userWallet) return;
