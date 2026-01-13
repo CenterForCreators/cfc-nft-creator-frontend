@@ -569,7 +569,7 @@ async function listOnMarketplace(submissionId) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
      body: JSON.stringify({
-  marketplace_nft_id: submissionId,
+ marketplace_nft_id: window.lastMintedNFT.marketplace_nft_id,
   currency: "XRP" // or "RLUSD"
 })
 
