@@ -229,49 +229,8 @@ Question 1: Explain self-custody."
 
 <div id="statusPanel" class="status-panel"></div>
 <script>  
-// ------------------------------
-// ENABLE LIST-ON-MARKETPLACE AFTER MINT
-// ------------------------------
-const listBtn = document.getElementById("listMarketplaceBtn");
 
-if (listBtn) {
-  listBtn.disabled = false;
-  listBtn.style.opacity = "1";
-  listBtn.style.cursor = "pointer";
-}
-// ------------------------------
-// LIST ON MARKETPLACE CLICK
-// ------------------------------
-document
-  .getElementById("listMarketplaceBtn")
-  ?.addEventListener("click", async () => {
 
-    if (document.getElementById("listMarketplaceBtn").disabled) {
-      alert("Please mint the NFT before listing it on the marketplace.");
-      return;
-    }
-
-  const res = await fetch(
-  "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      marketplace_nft_id: window.lastMintedNFT.marketplace_nft_id,
-      currency: "XRP" // change to "RLUSD" when needed
-    })
-  }
-);
-
-const data = await res.json();
-
-if (data.link) {
-  window.open(data.link, "_blank");
-} else {
-  alert("Failed to start marketplace listing");
-}
-
-  });
 </script>
 <h2 style="margin-top:40px;">My Minted NFTs</h2>
 <div id="mintedGallery"></div>
@@ -619,8 +578,8 @@ async function listOnMarketplace(submissionId) {
 
   const d = await r.json();
 
-  if (d?.xumm_link) {
-    window.open(d.xumm_link, "_blank");
+  if (d?.link) {
+    window.open(d.link, "_blank");
     return;
   }
 
