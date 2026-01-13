@@ -603,41 +603,63 @@ async function mintNow(id) {
     window.open(d.link, "_blank");
 }
 async function listOnMarketplace(submissionId) {
+  // 1) Ensure this submission exists in marketplace_nfts and get marketplace_nft_id
+  const addRes = await fetch(
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/add-nft",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ submission_id: submissionId })
+    }
+  );
+
+  const addData = await addRes.json();
+  if (!addRes.ok || !addData?.marketplace_nft_id) {
+    document.getElementById("result").innerHTML =
+      `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">
+        ${addData?.error || "Failed to prepare marketplace NFT"}
+      </div>`;
+    return;
+  }
+
+  const marketplace_nft_id = addData.marketplace_nft_id;
+
+  // 2) Ask which currency to create the sell offer in (XRP or RLUSD)
+  const currencyRaw = prompt("List sell offer in which currency? Type XRP or RLUSD", "XRP");
+  const currency = (currencyRaw || "").toUpperCase();
+  if (currency !== "XRP" && currency !== "RLUSD") {
+    alert("Please type XRP or RLUSD.");
+    return;
+  }
+
+  // 3) Create the sell offer via Xaman
   const r = await fetch(
     "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-     body: JSON.stringify({
-  marketplace_nft_id: submissionId,
-  currency: "XRP" // or "RLUSD"
-})
-
+      body: JSON.stringify({ marketplace_nft_id, currency })
     }
   );
 
   const d = await r.json();
 
-  if (d?.xumm_link) {
-    window.open(d.xumm_link, "_blank");
-    return;
-  }
-
-  if (!r.ok) {
+  if (!r.ok || !d?.link) {
     document.getElementById("result").innerHTML =
       `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">
-        ${d?.error || "Failed to list on marketplace"}
+        ${d?.error || "Failed to open Xaman listing"}
       </div>`;
     return;
   }
 
+  window.open(d.link, "_blank");
+
   document.getElementById("result").innerHTML =
     `<div class="success">
-      Listed on marketplace ✅
+      Xaman opened ✅ After you sign, refresh status.
     </div>`;
-
-  await loadStatus();
 }
+
 
 async function loadMintedGallery() {
     if (!userWallet) return;
