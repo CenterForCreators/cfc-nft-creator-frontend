@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -562,113 +556,42 @@ async function mintNow(id) {
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
     window.open(d.link, "_blank");
 }
-// ------------------------------
-// LIST ON MARKETPLACE (LIVE XRPL LOOKUP — FINAL)
-// ------------------------------
-app.post("/api/list-on-marketplace", async (req, res) => {
-  try {
-    const { marketplace_nft_id, currency } = req.body;
+async function listOnMarketplace(submissionId) {
+  // Find the marketplace row that matches this submission
+  const r = await fetch(
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/market/all"
+  );
 
-    if (!marketplace_nft_id || !currency) {
-      return res.status(400).json({ error: "Missing marketplace_nft_id or currency" });
-    }
+  const all = await r.json();
 
-    // Load marketplace NFT row
-    const r = await pool.query(
-      `
-      SELECT
-        id,
-        submission_id,
-        creator_wallet,
-        metadata_cid,
-        price_xrp,
-        price_rlusd
-      FROM marketplace_nfts
-      WHERE id = $1
-      `,
-      [marketplace_nft_id]
-    );
+  const row = all.find(n => Number(n.submission_id) === Number(submissionId));
 
-    if (!r.rows.length) {
-      return res.status(404).json({ error: "Marketplace NFT not found" });
-    }
-
-    const nft = r.rows[0];
-
-    // Fetch NFT directly from XRPL
-    const xrplClient = new xrpl.Client(process.env.XRPL_NETWORK);
-    await xrplClient.connect();
-
-    const acct = await xrplClient.request({
-      command: "account_nfts",
-      account: nft.creator_wallet
-    });
-
-    const expectedURI = xrpl
-      .convertStringToHex(`ipfs://${nft.metadata_cid}`)
-      .toUpperCase();
-
-    const ledgerNFT = acct.result.account_nfts.find(
-      n => n.URI?.toUpperCase() === expectedURI
-    );
-
-    await xrplClient.disconnect();
-
-    if (!ledgerNFT?.NFTokenID) {
-      return res.status(400).json({ error: "NFT not found on ledger yet" });
-    }
-
-    const Amount =
-      currency === "XRP"
-        ? String(Math.floor(Number(nft.price_xrp) * 1_000_000))
-        : {
-            currency: "524C555344000000000000000000000000000000",
-            issuer: process.env.RLUSD_ISSUER,
-            value: String(nft.price_rlusd)
-          };
-
-    const payload = {
-      txjson: {
-        TransactionType: "NFTokenCreateOffer",
-        Account: nft.creator_wallet,
-        NFTokenID: ledgerNFT.NFTokenID,
-        Amount,
-        Flags: 1
-      },
-      options: {
-        submit: true,
-        return_url: {
-          web: "https://centerforcreators.com/nft-creator",
-          app: "https://centerforcreators.com/nft-creator"
-        }
-      },
-      custom_meta: {
-        blob: {
-          marketplace_nft_id,
-          currency
-        }
-      }
-    };
-
-    const xumm = await axios.post(
-      "https://xumm.app/api/v1/platform/payload",
-      payload,
-      {
-        headers: {
-          "X-API-Key": process.env.XUMM_API_KEY,
-          "X-API-Secret": process.env.XUMM_API_SECRET
-        }
-      }
-    );
-
-    return res.json({ link: xumm.data.next.always });
-
-  } catch (e) {
-    console.error("list-on-marketplace error:", e?.response?.data || e.message);
-    return res.status(500).json({ error: "Failed to list NFT" });
+  if (!row || !row.id) {
+    alert("Marketplace NFT not found for this submission.");
+    return;
   }
-});
 
+  const res = await fetch(
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        marketplace_nft_id: row.id,
+        currency: "XRP" // change to "RLUSD" when needed
+      })
+    }
+  );
+
+  const data = await res.json();
+
+  if (data?.link) {
+    window.open(data.link, "_blank");
+    return;
+  }
+
+  alert(data?.error || "Failed to list NFT");
+}
 
 async function loadMintedGallery() {
     if (!userWallet) return;
