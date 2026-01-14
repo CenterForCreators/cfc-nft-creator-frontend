@@ -571,17 +571,13 @@ async function mintNow(id) {
     window.open(d.link, "_blank");
 }
 async function listOnMarketplace(submissionId) {
-  // Find the marketplace row that matches this submission
   const r = await fetch(
     "https://cfc-nft-shared-mint-backend.onrender.com/api/market/all"
   );
-
   const all = await r.json();
 
   const row = all.find(n => Number(n.submission_id) === Number(submissionId));
-
   if (!row || !row.id) {
-    alert("Marketplace NFT not found for this submission.");
     return;
   }
 
@@ -592,19 +588,15 @@ async function listOnMarketplace(submissionId) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         marketplace_nft_id: row.id,
-        currency: "XRP" // change to "RLUSD" when needed
+        currency: "XRP"
       })
     }
   );
 
   const data = await res.json();
-
   if (data?.link) {
     window.open(data.link, "_blank");
-    return;
   }
-
-  alert(data?.error || "Failed to list NFT");
 }
 
 async function loadMintedGallery() {
