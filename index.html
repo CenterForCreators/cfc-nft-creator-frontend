@@ -373,21 +373,18 @@ async function loadStatus() {
   `;
 }
 
-if (
-  sub.mint_status === "minted" &&
-  !sub.sell_offer_index_xrp &&
-  !sub.sell_offer_index_rlusd
-) {
-  html += `
-    <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
-    <button
-      style="margin-top:12px;"
-      ${sub.quantity_remaining <= 0 ? "disabled class='disabled'" : ""}
-      onclick="listOnMarketplace(${sub.id})"
-    >
-      ${sub.quantity_remaining <= 0 ? "Sold Out" : "List on Marketplace"}
-    </button>
-  `;
+
+if (sub.mint_status === "minted") {
+    html += `
+      <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
+      <button
+        style="margin-top:12px;"
+        ${sub.quantity_remaining <= 0 ? "disabled class='disabled'" : ""}
+        onclick="listOnMarketplace(${sub.id})"
+      >
+        ${sub.quantity_remaining <= 0 ? "Sold Out" : "List on Marketplace"}
+      </button>
+    `;
 }
 
         html += `</div>`;
