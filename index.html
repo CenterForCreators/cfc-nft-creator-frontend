@@ -379,7 +379,7 @@ if (sub.mint_status === "minted") {
       <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
      ${it.sell_offer_index_xrp
   ? `<span class="badge success">Listed on Marketplace</span>`
-  : `<button class="btn" onclick="listOnMarketplace(${it.id})">
+  : `<button class="btn" onclick="listOnMarketplace(${sub.id})">
        List My NFT
      </button>`
 }
