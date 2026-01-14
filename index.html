@@ -373,7 +373,11 @@ async function loadStatus() {
   `;
 }
 
-if (sub.mint_status === "minted") {
+if (
+  sub.mint_status === "minted" &&
+  !sub.sell_offer_index_xrp &&
+  !sub.sell_offer_index_rlusd
+) {
   html += `
     <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
     <button
