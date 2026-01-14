@@ -373,18 +373,17 @@ async function loadStatus() {
   `;
 }
 
-
 if (sub.mint_status === "minted") {
-    html += `
-      <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
-     ${it.sell_offer_index_xrp
-  ? `<span class="badge success">Listed on Marketplace</span>`
-  : `<button class="btn" onclick="listOnMarketplace(${sub.id})">
-       List My NFT
-     </button>`
-}
-
-    `;
+  html += `
+    <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
+    <button
+      style="margin-top:12px;"
+      ${sub.quantity_remaining <= 0 ? "disabled class='disabled'" : ""}
+      onclick="listOnMarketplace(${sub.id})"
+    >
+      ${sub.quantity_remaining <= 0 ? "Sold Out" : "List on Marketplace"}
+    </button>
+  `;
 }
 
         html += `</div>`;
