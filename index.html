@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -565,10 +566,7 @@ async function listOnMarketplace(submissionId) {
 
   const all = await r.json();
 
-  const candidates = (all || []).filter(n => Number(n.submission_id) === Number(submissionId));
-// pick the newest row (highest id) in case duplicates exist
-const row = candidates.sort((a,b) => Number(b.id || 0) - Number(a.id || 0))[0];
-
+  const row = all.find(n => Number(n.submission_id) === Number(submissionId));
 
   if (!row || !row.id) {
     alert("Marketplace NFT not found for this submission.");
