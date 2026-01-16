@@ -290,7 +290,7 @@ async function checkXummPaymentFromStorage() {
 
 async function checkXummMintFromStorage() {
     const mintUuid = localStorage.getItem(MINT_UUID_KEY);
-    const submissionId = localStorage.getItem(PAY_SUB_KEY);
+   const submissionId = localStorage.getItem(MINT_SUB_KEY);
     if (!mintUuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(mintUuid);
