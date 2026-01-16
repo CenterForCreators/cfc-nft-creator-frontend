@@ -2,7 +2,6 @@
 
 
 
-
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -291,7 +290,7 @@ async function checkXummPaymentFromStorage() {
 
 async function checkXummMintFromStorage() {
     const mintUuid = localStorage.getItem(MINT_UUID_KEY);
-   const submissionId = localStorage.getItem(MINT_SUB_KEY);
+    const submissionId = localStorage.getItem(PAY_SUB_KEY);
     if (!mintUuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(mintUuid);
@@ -336,16 +335,6 @@ async function loadStatus() {
     const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
     const items = await r.json();
     const mine = items.filter(x => x.creator_wallet === userWallet);
-   // ✅ Map marketplace rows by submission_id so we can hide "List on Marketplace" after sell offer exists
-let marketBySubmission = {};
-try {
-  const mr = await fetch("https://cfc-nft-shared-mint-backend.onrender.com/api/market/all");
-  const mj = await mr.json();
-  (mj || []).forEach(n => {
-    if (n?.submission_id != null) marketBySubmission[String(n.submission_id)] = n;
-  });
-} catch (e) {}
- 
     let html = "<h2>My Submissions</h2>";
     if (!mine.length) {
         html += "<p>You have no submissions yet.</p>";
@@ -387,25 +376,18 @@ try {
   `;
 }
 
-if (sub.mint_status === "minted") {
-  const mrow = marketBySubmission[String(sub.id)];
-  const hasSellOffer = !!(mrow?.sell_offer_index_xrp || mrow?.sell_offer_index);
 
-  if (!hasSellOffer) {
+if (sub.mint_status === "minted") {
     html += `
       <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
       <button
         style="margin-top:12px;"
+        ${sub.quantity_remaining <= 0 ? "disabled class='disabled'" : ""}
         onclick="listOnMarketplace(${sub.id})"
       >
-        List on Marketplace
+        ${sub.quantity_remaining <= 0 ? "Sold Out" : "List on Marketplace"}
       </button>
     `;
-  } else {
-    html += `
-      <div style="margin-top:10px;color:#28A745;font-weight:bold;">Listed ✔</div>
-    `;
-  }
 }
 
         html += `</div>`;
