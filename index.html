@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -381,12 +382,12 @@ if (sub.mint_status === "minted") {
     html += `
       <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
       <button
-  type="button"
-  style="margin-top:12px;"
-  onclick="listOnMarketplace(${sub.id})"
->
-  List on Marketplace
-</button>
+        style="margin-top:12px;"
+        ${sub.quantity_remaining <= 0 ? "disabled class='disabled'" : ""}
+        onclick="listOnMarketplace(${sub.id})"
+      >
+        ${sub.quantity_remaining <= 0 ? "Sold Out" : "List on Marketplace"}
+      </button>
     `;
 }
 
