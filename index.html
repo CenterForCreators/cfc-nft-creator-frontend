@@ -595,17 +595,20 @@ async function listOnMarketplace(submissionId) {
     return;
   }
 
-  const res = await fetch(
-    "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        marketplace_nft_id: row.id,
-        currency: "XRP" // change to "RLUSD" when needed
-      })
-    }
-  );
+const res = await fetch(
+  "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
+  {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      marketplace_nft_id: row.id,
+      currency: "XRP"
+    })
+  }
+);
 
   const data = await res.json();
 
