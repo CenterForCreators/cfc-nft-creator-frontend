@@ -388,26 +388,16 @@ try {
     <button class="disabled" disabled>List on Marketplace</button>
   `;
 }
-
 if (sub.mint_status === "minted") {
-  const mrow = marketBySubmission[String(sub.id)];
-  const hasSellOffer = !!(mrow?.sell_offer_index_xrp || mrow?.sell_offer_index);
-
-  if (!hasSellOffer) {
-    html += `
-      <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
-      <button
-        style="margin-top:12px;"
-        onclick="listOnMarketplace(${sub.id})"
-      >
-        List on Marketplace
-      </button>
-    `;
-  } else {
-    html += `
-      <div style="margin-top:10px;color:#28A745;font-weight:bold;">Listed ✔</div>
-    `;
-  }
+  html += `
+    <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
+    <button
+      style="margin-top:12px;"
+      onclick="listOnMarketplace(${sub.id})"
+    >
+      List on Marketplace
+    </button>
+  `;
 }
 
         html += `</div>`;
