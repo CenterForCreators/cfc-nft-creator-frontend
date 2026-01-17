@@ -258,6 +258,7 @@ let userWallet = "";
 const PAY_UUID_KEY = "cfc_last_pay_uuid";
 const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
+    const MINT_SUB_KEY  = "cfc_last_mint_submission";
 
 async function fetchMetadata(cid) {
     try {
@@ -268,7 +269,7 @@ async function fetchMetadata(cid) {
 
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
-    const submissionId = localStorage.getItem(PAY_SUB_KEY);
+   const submissionId = localStorage.getItem(MINT_SUB_KEY);
     if (!uuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(uuid);
@@ -303,6 +304,7 @@ async function checkXummMintFromStorage() {
             });
             window.lastMintedNFT = { submission_id: Number(submissionId) };
             localStorage.removeItem(MINT_UUID_KEY);
+            localStorage.removeItem(MINT_SUB_KEY);
             await loadStatus();
         }
     } catch(e){}
@@ -575,6 +577,7 @@ async function mintNow(id) {
     });
     const d = await r.json();
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
+    localStorage.setItem(MINT_SUB_KEY, String(id));
     window.open(d.link, "_blank");
 }
 async function listOnMarketplace(submissionId) {
