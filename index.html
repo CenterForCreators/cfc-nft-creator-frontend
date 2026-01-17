@@ -398,7 +398,7 @@ if (sub.mint_status === "minted") {
       <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
       <button
         style="margin-top:12px;"
-        onclick="listOnMarketplace(${sub.id})"
+        data-list-submission="${sub.id}"
       >
         List on Marketplace
       </button>
@@ -414,6 +414,8 @@ if (sub.mint_status === "minted") {
     });
     document.getElementById("statusPanel").innerHTML = html;
     await loadMintedGallery();
+   bindListButtons();
+ 
 }
 
 async function submitNFT() {
@@ -616,6 +618,14 @@ async function listOnMarketplace(submissionId) {
 
   alert(data?.error || "Failed to list NFT");
 }
+function bindListButtons() {
+  document.querySelectorAll("[data-list-submission]").forEach(btn => {
+    btn.onclick = () => {
+      const id = Number(btn.dataset.listSubmission);
+      listOnMarketplace(id);
+    };
+  });
+}
 
 async function loadMintedGallery() {
     if (!userWallet) return;
@@ -690,6 +700,7 @@ function toggleText(id) {
 document.addEventListener("DOMContentLoaded", () => {
     checkXummPaymentFromStorage();
     checkXummMintFromStorage();
+    bindListButtons();
 });
 
 // -------------------------------------------------------
