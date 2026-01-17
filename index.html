@@ -2,6 +2,8 @@
 
 
 
+
+
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -257,7 +259,6 @@ let userWallet = "";
 const PAY_UUID_KEY = "cfc_last_pay_uuid";
 const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
-    const MINT_SUB_KEY  = "cfc_last_mint_submission";
 
 async function fetchMetadata(cid) {
     try {
@@ -268,7 +269,7 @@ async function fetchMetadata(cid) {
 
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
-   const submissionId = localStorage.getItem(MINT_SUB_KEY);
+    const submissionId = localStorage.getItem(PAY_SUB_KEY);
     if (!uuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(uuid);
@@ -291,7 +292,7 @@ async function checkXummPaymentFromStorage() {
 
 async function checkXummMintFromStorage() {
     const mintUuid = localStorage.getItem(MINT_UUID_KEY);
-   const submissionId = localStorage.getItem(MINT_SUB_KEY);
+    const submissionId = localStorage.getItem(PAY_SUB_KEY);
     if (!mintUuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(mintUuid);
@@ -303,7 +304,6 @@ async function checkXummMintFromStorage() {
             });
             window.lastMintedNFT = { submission_id: Number(submissionId) };
             localStorage.removeItem(MINT_UUID_KEY);
-            localStorage.removeItem(MINT_SUB_KEY);
             await loadStatus();
         }
     } catch(e){}
@@ -395,13 +395,12 @@ if (sub.mint_status === "minted") {
   if (!hasSellOffer) {
     html += `
       <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
-     <button
-  type="button"
-  style="margin-top:12px;"
-  onclick="listOnMarketplace(${sub.id})"
->
-  List on Marketplace
-</button>
+      <button
+        style="margin-top:12px;"
+        onclick="listOnMarketplace(${sub.id})"
+      >
+        List on Marketplace
+      </button>
     `;
   } else {
     html += `
@@ -414,8 +413,6 @@ if (sub.mint_status === "minted") {
     });
     document.getElementById("statusPanel").innerHTML = html;
     await loadMintedGallery();
-   bindListButtons();
- 
 }
 
 async function submitNFT() {
@@ -579,7 +576,6 @@ async function mintNow(id) {
     });
     const d = await r.json();
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
-    localStorage.setItem(MINT_SUB_KEY, String(id));
     window.open(d.link, "_blank");
 }
 async function listOnMarketplace(submissionId) {
@@ -617,14 +613,6 @@ async function listOnMarketplace(submissionId) {
   }
 
   alert(data?.error || "Failed to list NFT");
-}
-function bindListButtons() {
-  document.querySelectorAll("[data-list-submission]").forEach(btn => {
-    btn.onclick = () => {
-      const id = Number(btn.dataset.listSubmission);
-      listOnMarketplace(id);
-    };
-  });
 }
 
 async function loadMintedGallery() {
@@ -700,8 +688,6 @@ function toggleText(id) {
 document.addEventListener("DOMContentLoaded", () => {
     checkXummPaymentFromStorage();
     checkXummMintFromStorage();
-     loadStatus();
-    bindListButtons();
 });
 
 // -------------------------------------------------------
