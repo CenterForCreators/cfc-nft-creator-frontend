@@ -1,9 +1,5 @@
 
 
-
-
-
-
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -259,7 +255,6 @@ let userWallet = "";
 const PAY_UUID_KEY = "cfc_last_pay_uuid";
 const PAY_SUB_KEY  = "cfc_last_pay_submission";
 const MINT_UUID_KEY = "cfc_last_mint_uuid";
-    const MINT_SUB_KEY  = "cfc_last_mint_submission";
 
 async function fetchMetadata(cid) {
     try {
@@ -270,7 +265,7 @@ async function fetchMetadata(cid) {
 
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
-   const submissionId = localStorage.getItem(MINT_SUB_KEY);
+    const submissionId = localStorage.getItem(PAY_SUB_KEY);
     if (!uuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(uuid);
@@ -293,7 +288,7 @@ async function checkXummPaymentFromStorage() {
 
 async function checkXummMintFromStorage() {
     const mintUuid = localStorage.getItem(MINT_UUID_KEY);
-   const submissionId = localStorage.getItem(MINT_SUB_KEY);
+    const submissionId = localStorage.getItem(PAY_SUB_KEY);
     if (!mintUuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(mintUuid);
@@ -305,7 +300,6 @@ async function checkXummMintFromStorage() {
             });
             window.lastMintedNFT = { submission_id: Number(submissionId) };
             localStorage.removeItem(MINT_UUID_KEY);
-            localStorage.removeItem(MINT_SUB_KEY);
             await loadStatus();
         }
     } catch(e){}
@@ -339,7 +333,7 @@ async function loadStatus() {
     const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
     const items = await r.json();
     const mine = items.filter(x => x.creator_wallet === userWallet);
-   // ✅ Map marketplace rows by submission_id so we can hide "List on Marketplace" after sell offer exists
+    // ✅ Map marketplace rows by submission_id (so we can hide List button after sell offer exists)
 let marketBySubmission = {};
 try {
   const mr = await fetch("https://cfc-nft-shared-mint-backend.onrender.com/api/market/all");
@@ -348,7 +342,7 @@ try {
     if (n?.submission_id != null) marketBySubmission[String(n.submission_id)] = n;
   });
 } catch (e) {}
- 
+
     let html = "<h2>My Submissions</h2>";
     if (!mine.length) {
         html += "<p>You have no submissions yet.</p>";
@@ -389,14 +383,20 @@ try {
     <button class="disabled" disabled>List on Marketplace</button>
   `;
 }
-if (sub.mint_status === "minted") {
+
+
+const marketRow = marketBySubmission[String(sub.id)];
+const hasSellOffer = !!(marketRow?.sell_offer_index_xrp || marketRow?.sell_offer_index);
+
+if (sub.mint_status === "minted" && !hasSellOffer) {
   html += `
     <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
     <button
       style="margin-top:12px;"
+      ${sub.quantity_remaining <= 0 ? "disabled class='disabled'" : ""}
       onclick="listOnMarketplace(${sub.id})"
     >
-      List on Marketplace
+      ${sub.quantity_remaining <= 0 ? "Sold Out" : "List on Marketplace"}
     </button>
   `;
 }
@@ -568,7 +568,6 @@ async function mintNow(id) {
     });
     const d = await r.json();
     localStorage.setItem(MINT_UUID_KEY, d.uuid);
-    localStorage.setItem(MINT_SUB_KEY, String(id));
     window.open(d.link, "_blank");
 }
 async function listOnMarketplace(submissionId) {
@@ -586,20 +585,17 @@ async function listOnMarketplace(submissionId) {
     return;
   }
 
-const res = await fetch(
-  "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
-  {
-    method: "POST",
-    mode: "cors",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      marketplace_nft_id: row.id,
-      currency: "XRP"
-    })
-  }
-);
+  const res = await fetch(
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        marketplace_nft_id: row.id,
+        currency: "XRP" // change to "RLUSD" when needed
+      })
+    }
+  );
 
   const data = await res.json();
 
