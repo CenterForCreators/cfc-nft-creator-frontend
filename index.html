@@ -382,7 +382,7 @@ try {
             </div>
         `;
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
-            html += `<button onclick="payNow(${sub.id})">Mint Your NFT</button>`;
+            html += `<button onclick="payNow(${sub.id})">Pay for NFT</button>`;
         }
       if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
   html += `
