@@ -601,12 +601,17 @@ const res = await fetch(
 );
 
   const data = await res.json();
+if (data?.link) {
+  window.open(data.link, "_blank");
 
-  if (data?.link) {
-    window.open(data.link, "_blank");
-    return;
-  }
+  // refresh status so button disappears after listing
+  setTimeout(() => {
+    loadStatus();
+  }, 3000);
 
+  return;
+}
+ 
   alert(data?.error || "Failed to list NFT");
 }
 
