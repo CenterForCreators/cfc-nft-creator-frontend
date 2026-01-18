@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -269,7 +270,7 @@ async function fetchMetadata(cid) {
 
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
-   const submissionId = localStorage.getItem(PAY_SUB_KEY);
+   const submissionId = localStorage.getItem(MINT_SUB_KEY);
     if (!uuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(uuid);
@@ -285,7 +286,8 @@ async function checkXummPaymentFromStorage() {
                 localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
                 window.open(data.mintLink, "_blank");
             }
-           
+            await loadStatus();
+        }
     } catch(e){}
 }
 
@@ -316,10 +318,10 @@ async function connectWallet() {
         document.getElementById("walletBox").innerHTML =
             "Wallet: <strong>" + userWallet + "</strong>";
         document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
-       document.addEventListener("DOMContentLoaded", () => {
-    checkXummPaymentFromStorage();
-    checkXummMintFromStorage();
-});
+        document.getElementById("connectBtn").onclick = disconnectWallet;
+        await loadStatus();
+        await checkXummPaymentFromStorage();
+        await checkXummMintFromStorage();
     }
 }
 
@@ -379,7 +381,7 @@ try {
             </div>
         `;
         if (sub.status === "approved" && sub.payment_status === "unpaid") {
-            html += `<button onclick="payNow(${sub.id})">Pay for NFT</button>`;
+            html += `<button onclick="payNow(${sub.id})">Mint Your NFT</button>`;
         }
       if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
   html += `
@@ -600,17 +602,12 @@ const res = await fetch(
 );
 
   const data = await res.json();
-if (data?.link) {
-  window.open(data.link, "_blank");
 
-  // refresh status so button disappears after listing
-  setTimeout(() => {
-    loadStatus();
-  }, 3000);
+  if (data?.link) {
+    window.open(data.link, "_blank");
+    return;
+  }
 
-  return;
-}
- 
   alert(data?.error || "Failed to list NFT");
 }
 
@@ -684,7 +681,9 @@ function toggleText(id) {
     }
 }
 
-
+document.addEventListener("DOMContentLoaded", () => {
+    checkXummPaymentFromStorage();
+    checkXummMintFromStorage();
 });
 
 // -------------------------------------------------------
