@@ -269,7 +269,7 @@ async function fetchMetadata(cid) {
 
 async function checkXummPaymentFromStorage() {
     const uuid = localStorage.getItem(PAY_UUID_KEY);
-   const submissionId = localStorage.getItem(MINT_SUB_KEY);
+   const submissionId = localStorage.getItem(PAY_SUB_KEY);
     if (!uuid || !submissionId) return;
     try {
         const payload = await xumm.payload.get(uuid);
@@ -285,8 +285,7 @@ async function checkXummPaymentFromStorage() {
                 localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
                 window.open(data.mintLink, "_blank");
             }
-            await loadStatus();
-        }
+           
     } catch(e){}
 }
 
@@ -317,10 +316,10 @@ async function connectWallet() {
         document.getElementById("walletBox").innerHTML =
             "Wallet: <strong>" + userWallet + "</strong>";
         document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
-        document.getElementById("connectBtn").onclick = disconnectWallet;
-        await loadStatus();
-        await checkXummPaymentFromStorage();
-        await checkXummMintFromStorage();
+       document.addEventListener("DOMContentLoaded", () => {
+    checkXummPaymentFromStorage();
+    checkXummMintFromStorage();
+});
     }
 }
 
@@ -685,10 +684,7 @@ function toggleText(id) {
     }
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-    await checkXummPaymentFromStorage();
-    await checkXummMintFromStorage();
-    await loadStatus();
+
 });
 
 // -------------------------------------------------------
