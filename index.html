@@ -618,10 +618,10 @@ const res = await fetch(
 
   const data = await res.json();
 
-  if (data?.link) {
-    window.open(data.link, "_blank");
-    return;
-  }
+ if (data?.link) {
+  window.top.location.href = data.link;
+  return;
+}
 
   alert(data?.error || "Failed to list NFT");
 }
