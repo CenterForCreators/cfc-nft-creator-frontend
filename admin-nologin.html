@@ -171,10 +171,11 @@ async function loadSubmissions() {
           <td>${s.id}</td>
           <td>${preview}</td>
   <td>
-  <button class="action-btn"
-   onclick="window.open('https://gateway.pinata.cloud/ipfs/${s.content_cid}','_blank')"
-    Open Content File
-  </button>
+ <button class="action-btn"
+  onclick="window.open(contentURL,'_blank')">
+  Open Content File
+</button>
+
 </td>
 
           <td>${md?.name || s.name}</td>
