@@ -171,11 +171,13 @@ async function loadSubmissions() {
           <td>${s.id}</td>
           <td>${preview}</td>
           <td>
+  <td>
   <button class="action-btn"
-    onclick="window.open(contentURL,'_blank')">
+    onclick="window.open('https://gateway.pinata.cloud/ipfs/${s.image_cid}','_blank')">
     Open Content File
   </button>
 </td>
+
           <td>${md?.name || s.name}</td>
       <td>
   ${buildCollapsible(md?.description || s.description)}
