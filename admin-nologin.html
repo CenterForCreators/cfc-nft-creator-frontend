@@ -162,12 +162,19 @@ async function loadSubmissions() {
 // -------------------------------
 
         const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
+        const contentURL = "https://gateway.pinata.cloud/ipfs/" + s.metadata_cid;
         let preview = `<img src="${mediaURL}" class="preview-img">`;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${s.id}</td>
           <td>${preview}</td>
+          <td>
+  <button class="action-btn"
+    onclick="window.open(contentURL,'_blank')">
+    Open Content File
+  </button>
+</td>
           <td>${md?.name || s.name}</td>
       <td>
   ${buildCollapsible(md?.description || s.description)}
@@ -177,9 +184,8 @@ async function loadSubmissions() {
       ? `
         <div style="margin-top:10px;padding:10px;background:#f4f4f4;border-radius:6px;">
           <strong>Learn-to-Earn Content</strong>
-          <pre style="white-space:pre-wrap;font-size:13px;margin-top:6px;">
-${md.learn.content}
-          </pre>
+         ${buildCollapsible(md.learn.content)}
+
         </div>
         `
       : ""
