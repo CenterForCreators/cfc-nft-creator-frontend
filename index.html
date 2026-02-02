@@ -488,7 +488,7 @@ const priceRLUSD = document.getElementById("priceRLUSD").value;
         method: "POST",
         body: fd
     })).json();
-
+const htmlFile = document.getElementById("htmlInput").files[0];
     // Optional HTML upload
     let htmlCid = null;
     if (htmlFile) {
