@@ -138,7 +138,8 @@
 <input type="file" id="fileInput" accept="image/*">
 
 <label>Upload Word or Google doc only (Content required for Learn & Earn)</label>
-<input type="file" id="htmlInput" accept=".html,text/html">
+<input type="file" id="htmlInput" accept=".docx,.html,text/html,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+
 
 <label>NFT Name 
 <input type="text" id="nftName" maxlength="100">
@@ -497,7 +498,7 @@ const priceRLUSD = document.getElementById("priceRLUSD").value;
             method: "POST",
             body: fdHtml
         })).json();
-        htmlCid = upHtml.cid;
+        htmlCid = upHtml.contentCid || upHtml.cid;
     }
 
     // --------------------------
