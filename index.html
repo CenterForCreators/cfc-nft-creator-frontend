@@ -489,6 +489,11 @@ const priceRLUSD = document.getElementById("priceRLUSD").value;
         body: fd
     })).json();
 const htmlFile = document.getElementById("htmlInput").files[0];
+    if (htmlFile && htmlFile.type && htmlFile.type.startsWith("image/")) {
+  alert("Content file must be a .docx or .html (not an image).");
+  return;
+}
+
     // Optional HTML upload
     let htmlCid = null;
     if (htmlFile) {
@@ -547,6 +552,7 @@ if (learnEnabled && learnText.trim()) {
             description,
             imageCid: upload.cid,
             metadataCid: md.cid,
+            contentCid: htmlCid,
             website: document.getElementById("website").value,
            contentCid: htmlCid,
             quantity: document.getElementById("quantity").value,
