@@ -10,6 +10,7 @@
 
 
 
+
 <!DOCTYPE html>   
 <html lang="en">
 <head>
@@ -134,19 +135,19 @@
 <button id="connectBtn" onclick="connectWallet()">Connect Xaman Wallet</button>
 <div id="walletBox" style="margin-top:15px;font-size:16px;"></div>
 
-<label>Upload NFT Image</label>
+<label>Upload Cover Image (required)</label>
 <input type="file" id="fileInput" accept="image/*">
 
-<label>Upload Book/Workshop File (optional)</label>
+<label>Upload Word or Google doc only (Content required for Learn & Earn)</label>
 <input type="file" id="htmlInput" accept=".docx,.html,text/html,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
 
-<label>NFT Name</label>
+
+<label>NFT Name 
 <input type="text" id="nftName" maxlength="100">
 <div id="countName" class="char-counter">0 / 100</div>
 
-<label>Description</label>
+<label>Description 
 <textarea id="nftDescription" rows="4" maxlength="750"></textarea>
-
     <div id="countDescription" class="char-counter">0 / 750</div>
     <label>Category 
 <select id="nftCategory">
@@ -197,8 +198,8 @@ Question 1: Explain self-custody."
 <textarea id="nftTerms" rows="4" maxlength="750"></textarea>
 <div id="countTerms" class="char-counter">0 / 750</div>
 
-<label>Email</label>
-<input type="email" id="email" name="email" placeholder="you@yourdomain.com">
+<label>Email 
+<input type="email" id="email" name="email" placeholder="you@yourdomain.com" 
 <label>Website (optional)</label>
 <input
   type="url"
@@ -456,8 +457,7 @@ async function submitNFT() {
 
     // Required fields check (THIS was missing)
     const file = document.getElementById("fileInput").files[0];
-   const htmlInput = document.getElementById("htmlInput");
-const htmlFile = htmlInput ? htmlInput.files[0] : null;
+    const htmlFile = document.getElementById("htmlInput").files[0];
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
   const email = document.getElementById("email").value;
@@ -490,7 +490,6 @@ const priceRLUSD = document.getElementById("priceRLUSD").value;
         body: fd
     })).json();
 const htmlFile = document.getElementById("htmlInput").files[0];
-
     // Optional HTML upload
     let htmlCid = null;
     if (htmlFile) {
@@ -549,7 +548,6 @@ if (learnEnabled && learnText.trim()) {
             description,
             imageCid: upload.cid,
             metadataCid: md.cid,
-            contentCid: htmlCid,
             website: document.getElementById("website").value,
            contentCid: htmlCid,
             quantity: document.getElementById("quantity").value,
