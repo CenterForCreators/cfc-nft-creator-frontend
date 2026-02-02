@@ -456,7 +456,8 @@ async function submitNFT() {
 
     // Required fields check (THIS was missing)
     const file = document.getElementById("fileInput").files[0];
-    const htmlFile = document.getElementById("htmlInput").files[0];
+   const htmlInput = document.getElementById("htmlInput");
+const htmlFile = htmlInput ? htmlInput.files[0] : null;
     const name = document.getElementById("nftName").value;
     const description = document.getElementById("nftDescription").value;
   const email = document.getElementById("email").value;
