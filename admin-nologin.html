@@ -172,9 +172,9 @@ async function loadSubmissions() {
           <td>${s.id}</td>
           <td>${preview}</td>
   <td>
- <button class="action-btn"
- window.open(BACKEND + 'api/view-content/' + s.content_cid, '_blank')
-   Open Content File
+<button class="action-btn"
+  onclick="s.content_cid && window.open(BACKEND + 'api/view-content/' + s.content_cid, '_blank')">
+  Open Content File
 </button>
 
 </td>
