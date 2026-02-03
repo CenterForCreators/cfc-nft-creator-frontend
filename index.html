@@ -1,312 +1,800 @@
 
-<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>   
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>CFC Admin Dashboard (Auto Mint Enabled)</title>
+<meta charset="UTF-8">
+<title>CFC NFT Creator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- XUMM SDK -->
+<script src="https://xumm.app/assets/cdn/xumm.min.js"></script>
+
 <style>
-    html { background: #fff; }
-    body {
-        font-family: Arial, sans-serif;
-        background: #fff;
+    body { margin:0; background:#000; font-family:Arial,sans-serif; }
+    .outer { padding:40px 0; display:flex; justify-content:center; }
+    .container {
+        width:90%; max-width:700px;
+        background:#fff; padding:30px; border-radius:12px;
+    }
+    h1 { text-align:center; color:#000; margin-bottom:20px; }
+    label { font-weight:bold; margin-top:15px; display:block; }
+    input, textarea {
+        width:100%; padding:12px; margin-top:6px;
+        border:1px solid #ccc; border-radius:6px; font-size:16px;
+    }
+    button {
+        width:100%; padding:15px; margin-top:25px;
+        background:#111; color:#fff; border:none;
+        border-radius:6px; font-size:18px; cursor:pointer;
+    }
+    button:hover { background:#333; }
+    .disabled { background:#666!important; cursor:not-allowed!important; }
+    .info-box {
+        background:#f2f2f2; padding:15px; margin-top:25px;
+        border-radius:8px; font-size:15px; line-height:1.5;
+    }
+    .success {
+        background:#e6ffe6; border-left:4px solid #2ca02c;
+        padding:10px; margin-top:20px;
+    }
+
+    .status-panel {
+        margin-top:30px;
+        border-top:2px solid #ddd;
+        padding-top:25px;
+    }
+    .status-card {
+        background:#fafafa;
+        padding:15px;
+        border-radius:8px;
+        margin-bottom:15px;
+        border-left:5px solid #777;
+    }
+    .status-title { font-weight:bold; margin-bottom:8px; }
+    .pending { border-color:#FFC107; }
+    .approved { border-color:#17A2B8; }
+    .paid { border-color:#007BFF; }
+    .minted { border-color:#28A745; }
+
+    .char-counter {
+        font-size:12px;
+        color:#666;
+        text-align:right;
+        margin-top:4px;
+    }
+
+    .collapsed-text {
+        display:-webkit-box;
+        -webkit-line-clamp:3;
+        -webkit-box-orient:vertical;
+        overflow:hidden;
+    }
+    .read-more {
+        color:#007BFF;
+        font-size:13px;
+        cursor:pointer;
+        margin-top:4px;
+        display:inline-block;
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
         margin: 0;
-        padding: 30px;
     }
-    .box {
-        max-width: 1400px;
-        margin: auto;
-        background: #fff;
-        border-radius: 12px;
-        padding: 30px;
-    }
-    h1 { text-align: center; margin-bottom: 25px; }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 30px;
-        font-size: 15px;
-    }
-    th, td {
-        padding: 12px;
-        border-bottom: 1px solid #ccc;
-        vertical-align: top;
-    }
-    th {
-        background: #eee;
-        text-align: left;
-        font-weight: bold;
-    }
-    .action-btn {
-        padding: 6px 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        margin-right: 6px;
-    }
-    .approve { background: #28a745; color: #fff; }
-    .reject  { background: #dc3545; color: #fff; }
-    .preview-img { max-width: 140px; border-radius: 6px; }
+    input[type=number] { -moz-appearance: textfield; }
+    select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  background: #fff;
+}
+.delist-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 11px;
+  padding: 4px 8px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: auto;
+}
 
-    .paid { color:#007BFF; font-weight:bold; }
-    .minted { color:#28A45; font-weight:bold; }
-    .pending { color:#FFC107; font-weight:bold; }
-    .approved { color:#17A2B8; font-weight:bold; }
-    .rejected { color:#dc3545; font-weight:bold; }
-
-    .text-ellipsis {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        white-space: pre-line;
-    }
-    .text-expanded {
-        display: block;
-        white-space: pre-line;
-    }
-    .toggle-link {
-        color: #007BFF;
-        font-size: 13px;
-        cursor: pointer;
-        margin-top: 4px;
-        display: inline-block;
-    }
+.delist-btn.relist {
+  background: #000;
+}
+  
 </style>
 </head>
 
 <body>
 
-<div class="box">
-<h1>CFC NFT Creator — Admin Dashboard</h1>
-    <!-- ===============================
-     LEARN-TO-EARN ACTIVITY (NEW)
-     ADD-ONLY / NO REGRESSIONS
-================================ -->
+<div class="outer">
+<div class="container">
 
-<h2 style="margin-top:50px;">Learn-to-Earn Activity</h2>
+<h1>Create Your NFT</h1>
 
-<table id="learnTable">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Wallet</th>
-      <th>Submission ID</th>
-      <th>Action</th>
-      <th>Reference</th>
-      <th>Earned</th>
-      <th>Paid</th>
-      <th>Timestamp</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+<button id="connectBtn" onclick="connectWallet()">Connect Xaman Wallet</button>
+<div id="walletBox" style="margin-top:15px;font-size:16px;"></div>
 
-<table id="subTable">
-<thead>
-<tr>
-    <th>ID</th>
-    <th>Preview</th>
-    <th>Content</th>
-    <th>Name</th>
-    <th>Description</th>
-    <th>Terms</th>
-    <th>Qty</th>
-    <th>Price XRP</th>
-    <th>Price RLUSD</th>
-    <th>Wallet</th>
-    <th>Email</th>
-    <th>Website</th>
-    <th>Status</th>
-    <th>Payment</th>
-    <th>Mint</th>
-    <th>Redeem</th>
-    <th>Actions</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
+<label>Upload NFT Image (required)</label>
+<input type="file" id="fileInput" accept="image/*">
+
+<label>Upload Workshop/Book content. Word or Google doc only (Content required for Learn & Earn)</label>
+<input type="file" id="htmlInput" accept=".docx,.html,text/html,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+
+<label>NFT Name 
+<input type="text" id="nftName" maxlength="100">
+<div id="countName" class="char-counter">0 / 100</div>
+
+<label>Description 
+<textarea id="nftDescription" rows="4" maxlength="750"></textarea>
+    <div id="countDescription" class="char-counter">0 / 750</div>
+    <label>Category 
+<select id="nftCategory">
+  <option value="" selected disabled>Select category</option> 
+  <option value="all">All</option>
+  <option value="services">Services</option>
+  <option value="workshops">Workshops</option>
+  <option value="books">Books</option>
+  <option value="art">Art</option>
+</select>
+    
+
+<!-- LEARN & EARN (required for Learn & Earn) -->
+<!-- ============================= -->
+
+<label style="margin-top:25px; display:flex; align-items:center; gap:10px;">
+  <input
+    type="checkbox"
+    id="enableLearn"
+    style="width:18px;height:18px;cursor:pointer;"
+  >
+  <span>Enable Learn & Earn rewards for this NFT</span>
+</label>
+
+<div id="learnBox" style="display:none;margin-top:10px;">
+
+  <div style="font-size:14px;color:#444;margin-bottom:8px;">
+    <strong>Learn & Earn Setup</strong><br>
+    Add up to 3 questions or activities per chapter or section.
+    <strong>YOU MUST label the Chapter or Section number.</strong><br>
+    Works for books (chapters) and workshops (sections).
+  </div>
+
+  <textarea
+    id="learnText"
+    rows="8"
+    placeholder="Chapter 1
+Question 1: What is decentralization?
+Question 2: Why is trust important?
+
+Chapter 2
+Question 1: Explain self-custody."
+  ></textarea>
+
+</div>
+
+<label>Terms</label>
+<textarea id="nftTerms" rows="4" maxlength="750"></textarea>
+<div id="countTerms" class="char-counter">0 / 750</div>
+
+<label>Email 
+<input type="email" id="email" name="email" placeholder="you@yourdomain.com" 
+<label>Website (optional)</label>
+<input
+  type="url"
+  id="website"
+  name="website"
+  placeholder="https://yourwebsite.com"
+/>
+
+<label>Quantity 
+<input
+  type="number"
+  id="quantity"
+  name="quantity"
+  value="1"
+  min="1"
+  max="1"
+  readonly
+/>
+
+
+  <label>Price (RLUSD)
+<input type="number" id="priceRLUSD">  
+      
+<label>Price (XRP) 
+<input type="number" id="priceXRP">
+
+<label>Marketplace Fee</label>
+<input type="text" value="1 XRP per each NFT)" disabled>
+
+<button id="submitBtn" onclick="submitNFT()">Submit NFT for Approval</button>
+
+<div id="result"></div>
+
+<div class="info-box">
+<strong>NFT Creation Process</strong><br><br>
+1️⃣ Connect your Xaman wallet<br>
+2️⃣ Upload file + fill out details<br>
+3️⃣ Submit NFT for approval (up to 24 hours)<br>
+4️⃣ After approval, pay the 1 XRP fee<br>
+5️⃣ follow the Mint and List buttons to complete tranactions <br>
+6️⃣ All 3 transaction must be signed on Xaman to List your NFT<br>
+</div>
+
+<div id="statusPanel" class="status-panel"></div>
+<script>  
+
+
+</script>
+<h2 style="margin-top:40px;">My Minted NFTs</h2>
+<div id="mintedGallery"></div>
+
+</div>
 </div>
 
 <script>
-const BACKEND = "https://cfc-nft-creator-backend.onrender.com";
-const ADMIN_PASSWORD = "CFCBaby3!";
+const BACKEND = "https://cfc-nft-creator-backend.onrender.com/";
+
+function updateCounter(idInput, idCounter, max) {
+    const el = document.getElementById(idInput);
+    const counter = document.getElementById(idCounter);
+    el.addEventListener("input", () => {
+        counter.textContent = el.value.length + " / " + max;
+    });
+}
+
+updateCounter("nftName", "countName", 100);
+updateCounter("nftDescription", "countDescription", 750);
+updateCounter("nftTerms", "countTerms", 750);
+
+const xumm = new Xumm("eebd4c17-c3ef-435b-b891-89afb99e259e");
+
+let userWallet = "";
+
+const PAY_UUID_KEY = "cfc_last_pay_uuid";
+const PAY_SUB_KEY  = "cfc_last_pay_submission";
+const MINT_UUID_KEY = "cfc_last_mint_uuid";
+    const MINT_SUB_KEY  = "cfc_last_mint_submission";
 
 async function fetchMetadata(cid) {
     try {
         const r = await fetch("https://gateway.pinata.cloud/ipfs/" + cid);
         return await r.json();
-    } catch {
-        return null;
+    } catch (e) { return null; }
+}
+
+async function checkXummPaymentFromStorage() {
+    const uuid = localStorage.getItem(PAY_UUID_KEY);
+const submissionId = localStorage.getItem(PAY_SUB_KEY);
+    if (!uuid || !submissionId) return;
+    try {
+        const payload = await xumm.payload.get(uuid);
+        if (payload && (payload.signed || payload.meta?.signed)) {
+            const res = await fetch(BACKEND + "api/mark-paid", {
+                method:"POST",
+                headers:{ "Content-Type":"application/json" },
+                body:JSON.stringify({ id:Number(submissionId), uuid })
+            });
+            const data = await res.json();
+            localStorage.removeItem(PAY_UUID_KEY);
+            if (data.mintCreated && data.mintLink) {
+                localStorage.setItem(MINT_UUID_KEY, data.mintUuid);
+                window.open(data.mintLink, "_blank");
+            }
+            await loadStatus();
+        }
+    } catch(e){}
+}
+
+async function checkXummMintFromStorage() {
+    const mintUuid = localStorage.getItem(MINT_UUID_KEY);
+   const submissionId = localStorage.getItem(MINT_SUB_KEY);
+    if (!mintUuid || !submissionId) return;
+    try {
+        const payload = await xumm.payload.get(mintUuid);
+        if (payload && (payload.signed || payload.meta?.signed)) {
+            await fetch(BACKEND + "api/mark-minted", {
+                method:"POST",
+                headers:{ "Content-Type":"application/json" },
+                body:JSON.stringify({ id:Number(submissionId), uuid:mintUuid })
+            });
+            window.lastMintedNFT = { submission_id: Number(submissionId) };
+            localStorage.removeItem(MINT_UUID_KEY);
+            localStorage.removeItem(MINT_SUB_KEY);
+            await loadStatus();
+        }
+    } catch(e){}
+}
+
+async function connectWallet() {
+    const popup = await xumm.authorize();
+    if (popup.me?.account) {
+        userWallet = popup.me.account;
+        document.getElementById("walletBox").innerHTML =
+            "Wallet: <strong>" + userWallet + "</strong>";
+        document.getElementById("connectBtn").innerHTML = "Disconnect Wallet";
+        document.getElementById("connectBtn").onclick = disconnectWallet;
+        await loadStatus();
+        await checkXummPaymentFromStorage();
+        await checkXummMintFromStorage();
     }
 }
 
-function buildCollapsible(text) {
-    return `
-      <div class="text-ellipsis">${text}</div>
-      <div class="text-expanded" style="display:none;">${text}</div>
-      <span class="toggle-link" onclick="toggleReadMore(this)">Read more</span>
-    `;
+function disconnectWallet() {
+    xumm.logout();
+    userWallet = "";
+    document.getElementById("walletBox").innerHTML = "";
+    document.getElementById("connectBtn").innerHTML = "Connect Xaman Wallet";
+    document.getElementById("connectBtn").onclick = connectWallet;
+    document.getElementById("statusPanel").innerHTML = "";
 }
 
-async function loadSubmissions() {
-    const res = await fetch(`${BACKEND}/api/admin/submissions?password=${ADMIN_PASSWORD}`);
-    const subs = await res.json();
-    const tbody = document.querySelector("#subTable tbody");
-    tbody.innerHTML = "";
+async function loadStatus() {
+    if (!userWallet) return;
+    const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
+    const items = await r.json();
+    const mine = items.filter(x => x.creator_wallet === userWallet);
+   // ✅ Map marketplace rows by submission_id so we can hide "List on Marketplace" after sell offer exists
+let marketBySubmission = {};
+try {
+  const mr = await fetch("https://cfc-nft-shared-mint-backend.onrender.com/api/market/all");
+  const mj = await mr.json();
+  (mj || []).forEach(n => {
+    if (n?.submission_id != null) marketBySubmission[String(n.submission_id)] = n;
+  });
+} catch (e) {}
+ 
+    let html = "<h2>My Submissions</h2>";
+    if (!mine.length) {
+        html += "<p>You have no submissions yet.</p>";
+        document.getElementById("statusPanel").innerHTML = html;
+        return;
+    }
+    mine.forEach(sub => {
+        let cls = "pending";
+        if (sub.status === "approved" && sub.payment_status === "unpaid") cls = "approved";
+        if (sub.payment_status === "paid" && sub.mint_status === "pending") cls = "paid";
+        if (sub.mint_status === "minted") cls = "minted";
+        if (sub.status === "rejected") cls = "rejected";
+        html += `
+        <div class="status-card ${cls}">
+            <div class="status-title">${sub.name}</div>
+            <div>
+  Status:
+  <strong>
+    ${
+      sub.status === "rejected"
+        ? "❌ REJECTED — check your email"
+        : cls.toUpperCase()
+    }
+  </strong>
+</div>
+            <div>Qty: ${sub.batch_qty}</div>
 
-    for (const s of subs) {
-        const md = await fetchMetadata(s.metadata_cid);
-// -------------------------------
-// LEARN-TO-EARN (ADMIN VIEW)
-// -------------------------------
+            <div>Metadata: 
+                <a href="https://gateway.pinata.cloud/ipfs/${sub.metadata_cid}" target="_blank">View</a>
+            </div>
+        `;
+        if (sub.status === "approved" && sub.payment_status === "unpaid") {
+            html += `<button onclick="payNow(${sub.id})">Pay for NFT</button>`;
+        }
+      if (sub.payment_status === "paid" && sub.mint_status !== "minted") {
+  html += `
+    <button onclick="mintNow(${sub.id})">Mint NFT</button>
+    <button class="disabled" disabled>List on Marketplace</button>
+  `;
+}
 
-        const mediaURL = "https://gateway.pinata.cloud/ipfs/" + s.image_cid;
-       const contentURL = "https://gateway.pinata.cloud/ipfs/" + s.content_cid;
-        let preview = `<img src="${mediaURL}" class="preview-img">`;
+if (sub.mint_status === "minted") {
+  const marketRow = marketBySubmission[String(sub.id)];
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${s.id}</td>
-          <td>${preview}</td>
-  <td>
- <button class="action-btn"
-  window.open('https://ipfs.io/ipfs/${s.content_cid}','_blank')">
-   Open Content File
+  html += `
+    <div style="margin-top:10px;color:#28A745;font-weight:bold;">Minted ✔</div>
+  `;
+
+ if (!marketRow || Number(marketRow.xrp_open_offers || 0) < 1) {
+    html += `
+      <button
+        style="margin-top:12px;"
+        onclick="listOnMarketplace(${sub.id})"
+      >
+        List on Marketplace
+      </button>
+    `;
+  } else {
+    html += `
+      <div style="margin-top:12px;color:#6c757d;font-weight:bold;">
+        Listed on Marketplace ✔
+      </div>
+    `;
+  }
+}
+        html += `</div>`;
+    });
+    document.getElementById("statusPanel").innerHTML = html;
+    await loadMintedGallery();
+}
+
+async function submitNFT() {
+    const submitBtn = document.getElementById("submitBtn");
+    const resultBox = document.getElementById("result");
+
+    // Immediate visual feedback
+    submitBtn.classList.add("disabled");
+    submitBtn.innerText = "Submitting...";
+    resultBox.innerHTML = "";
+
+    // Wallet check
+    if (!userWallet) {
+        resultBox.innerHTML = `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">Please connect your wallet.</div>`;
+        setTimeout(() => { resultBox.innerHTML = ""; }, 3000);
+        submitBtn.classList.remove("disabled");
+        submitBtn.innerText = "Submit NFT for Approval";
+        return;
+    }
+
+    // Required fields check (THIS was missing)
+    const file = document.getElementById("fileInput").files[0];
+    const htmlFile = document.getElementById("htmlInput").files[0];
+    const name = document.getElementById("nftName").value;
+    const description = document.getElementById("nftDescription").value;
+  const email = document.getElementById("email").value;
+const category = document.getElementById("nftCategory").value;
+const quantity = document.getElementById("quantity").value;
+const priceXRP = document.getElementById("priceXRP").value;
+const priceRLUSD = document.getElementById("priceRLUSD").value;
+
+   if (
+  !file ||
+  !name ||
+  !description ||
+  !email ||
+  !category ||
+  !quantity ||
+  (!priceXRP && !priceRLUSD)
+) {
+
+        resultBox.innerHTML = `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">Please complete all required fields.</div>`;
+        setTimeout(() => { resultBox.innerHTML = ""; }, 3000);
+        submitBtn.classList.remove("disabled");
+        submitBtn.innerText = "Submit NFT for Approval";
+        return;
+    }
+    // Upload image
+    const fd = new FormData();
+    fd.append("file", file);
+    const upload = await (await fetch(BACKEND + "api/upload", {
+        method: "POST",
+        body: fd
+    })).json();
+
+    // Optional HTML upload
+    let htmlCid = null;
+    if (htmlFile) {
+        const fdHtml = new FormData();
+        fdHtml.append("file", htmlFile);
+        const upHtml = await (await fetch(BACKEND + "api/upload", {
+            method: "POST",
+            body: fdHtml
+        })).json();
+      htmlCid = upHtml.contentCid || upHtml.cid; 
+    }
+
+    // --------------------------
+    // CLEAN NUMERIC VALIDATION
+    // --------------------------
+    function cleanNum(v) {
+        const n = Number(v);
+        return n > 0 ? n : null;
+    }
+
+ const metadata = {
+    name,
+    description,
+    category: document.getElementById("nftCategory").value,
+    terms: document.getElementById("nftTerms").value,
+    quantity: document.getElementById("quantity").value,
+    price_xrp: cleanNum(document.getElementById("priceXRP").value),
+    price_rlusd: cleanNum(document.getElementById("priceRLUSD").value),
+    image: "ipfs://" + upload.cid,
+    content_html: htmlCid ? ("ipfs://" + htmlCid) : null,
+};
+
+const learnEnabled = document.getElementById("enableLearn").checked;
+const learnText = document.getElementById("learnText").value;
+
+if (learnEnabled && learnText.trim()) {
+    metadata.learn = {
+        enabled: true,
+        content: learnText
+    };
+}
+
+    const fd2 = new FormData();
+    fd2.append("file",
+        new Blob([JSON.stringify(metadata)], {type:"application/json"}),
+        "metadata.json"
+    );
+    const md = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fd2 })).json();
+
+    await fetch(BACKEND + "api/submit", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({
+            wallet:userWallet,
+            name,
+            description,
+            imageCid: upload.cid,
+            metadataCid: md.cid,
+            contentCid: htmlCid,
+            website: document.getElementById("website").value,
+           contentCid: htmlCid,
+            quantity: document.getElementById("quantity").value,
+            email: document.getElementById("email").value,
+            metadata: JSON.stringify({
+    terms: metadata.terms,
+    price_xrp: metadata.price_xrp,
+    price_rlusd: metadata.price_rlusd,
+    category: metadata.category
+})
+        })
+    });
+
+    document.getElementById("result").innerHTML =
+        `<div class="success">NFT Submitted!</div>`;
+        submitBtn.classList.remove("disabled");
+    submitBtn.innerText = "Submit NFT for Approval";
+
+    document.getElementById("fileInput").value = "";
+    document.getElementById("htmlInput").value = "";
+    document.getElementById("nftName").value = "";
+    document.getElementById("nftDescription").value = "";
+    document.getElementById("nftTerms").value = "";
+    document.getElementById("quantity").value = "";
+    document.getElementById("priceXRP").value = "";
+    document.getElementById("priceRLUSD").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("website").value = "";
+
+    loadStatus();
+}
+
+async function payNow(submissionId) {
+    const r = await fetch(BACKEND + "api/pay-xrp", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ submissionId })
+    });
+    const d = await r.json();
+    localStorage.setItem(PAY_UUID_KEY, d.uuid);
+    localStorage.setItem(PAY_SUB_KEY, String(submissionId));
+    window.open(d.link, "_blank");
+}
+
+async function mintNow(id) {
+    const r = await fetch(BACKEND + "api/start-mint", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ id })
+    });
+    const d = await r.json();
+    localStorage.setItem(MINT_UUID_KEY, d.uuid);
+    localStorage.setItem(MINT_SUB_KEY, String(id));
+    window.open(d.link, "_blank");
+}
+async function listOnMarketplace(submissionId) {
+  // Find the marketplace row that matches this submission
+  const r = await fetch(
+    "https://cfc-nft-shared-mint-backend.onrender.com/api/market/all"
+  );
+
+  const all = await r.json();
+
+  const row = all.find(n => Number(n.submission_id) === Number(submissionId));
+
+  if (!row || !row.id) {
+    alert("Marketplace NFT not found for this submission.");
+    return;
+  }
+
+const res = await fetch(
+  "https://cfc-nft-shared-mint-backend.onrender.com/api/list-on-marketplace",
+  {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      marketplace_nft_id: row.id,
+      currency: "XRP"
+    })
+  }
+);
+
+  const data = await res.json();
+
+ if (data?.link) {
+  window.top.location.href = data.link;
+  return;
+}
+
+  alert(data?.error || "Failed to list NFT");
+}
+
+async function loadMintedGallery() {
+    if (!userWallet) return;
+    const r = await fetch(BACKEND + "api/admin/submissions?password=CFCBaby3!");
+    const items = await r.json();
+    const minted = items.filter(x =>
+        x.creator_wallet === userWallet && x.mint_status === "minted"
+    );
+    let html = "";
+    for (const nft of minted) {
+        const md = await fetchMetadata(nft.metadata_cid);
+        const desc = md?.description || nft.description;
+        const terms = md?.terms || "—";
+        html += `
+    <div style="
+        background:#fafafa;
+        padding:15px;
+        margin-bottom:15px;
+        border-radius:10px;
+        border-left:5px solid #28A745;
+        position:relative;
+    ">
+                <img src="https://gateway.pinata.cloud/ipfs/${nft.image_cid}"
+                     style="width:120px;border-radius:6px;margin-bottom:10px;">
+
+                <div><strong>${md?.name || nft.name}</strong></div>
+
+                <div class="collapsed-text" id="desc-${nft.id}">
+                    ${desc}
+                </div>
+                <span class="read-more" onclick="toggleText('desc-${nft.id}')">Read more</span>
+
+                <div class="collapsed-text" id="terms-${nft.id}" style="margin-top:6px;">
+                    <strong>Terms:</strong> ${terms}
+                </div>
+                <span class="read-more" onclick="toggleText('terms-${nft.id}')">Read more</span>
+
+                <div style="font-size:14px;margin-top:4px;">
+                    <strong>Price:</strong> ${md?.price_xrp || "—"} XRP 
+                    | ${md?.price_rlusd || "—"} RLUSD
+                </div>
+
+                <a href="https://gateway.pinata.cloud/ipfs/${nft.metadata_cid}" 
+                   target="_blank"
+                   style="display:inline-block;margin-top:8px;font-size:14px;">
+                   View Metadata →
+                </a>
+                       <button
+  class="delist-btn"
+  onclick="toggleDelist(${nft.id}, this)">
+  Delist
 </button>
 
-</td>
-
-          <td>${md?.name || s.name}</td>
-      <td>
-  ${buildCollapsible(md?.description || s.description)}
-
-  ${
-    md?.learn?.enabled
-      ? `
-        <div style="margin-top:10px;padding:10px;background:#f4f4f4;border-radius:6px;">
-          <strong>Learn-to-Earn Content</strong>
-         ${buildCollapsible(md.learn.content)}
-
-        </div>
-        `
-      : ""
-  }
-</td>
-          <td>${buildCollapsible(md?.terms || s.terms || "—")}</td>
-          <td>${s.batch_qty}</td>
-          <td>${md?.price_xrp || s.price_xrp || "—"}</td>
-          <td>${md?.price_rlusd || s.price_rlusd || "—"}</td>
-          <td>${s.creator_wallet}</td>
-          <td>${s.email || "—"}</td>
-          <td>${s.website ? `<a href="${s.website}" target="_blank">Visit</a>` : "—"}</td>
-          <td class="${s.status}">${s.status}</td>
-          <td class="${s.payment_status === "paid" ? "paid" : "pending"}">${s.payment_status}</td>
-          <td class="${s.mint_status === "minted" ? "minted" : "pending"}">${s.mint_status}</td>
-          <td>
-            ${s.status === "REDEEM_REQUESTED"
-              ? `<strong style="color:#dc3545">Redeem Requested</strong><br>Email: ${s.buyer_email || "—"}`
-              : "—"}
-          </td>
-          <td>
-            ${
-              s.status === "pending"
-              ? `
-                <button class="action-btn approve" onclick="approve(${s.id})">Approve</button>
-                <button class="action-btn reject" onclick="reject(${s.id})">Reject</button>
-              `
-              : s.status === "rejected"
-                ? `<span class="rejected">❌ Rejected</span>`
-                : ""
-            }
-          </td>
+            </div>
         `;
-        tbody.appendChild(tr);
     }
+    document.getElementById("mintedGallery").innerHTML = html;
 }
 
-function toggleReadMore(el) {
-    const box = el.parentElement;
-    const collapsed = box.querySelector(".text-ellipsis");
-    const expanded = box.querySelector(".text-expanded");
-
-    if (expanded.style.display === "none") {
-        collapsed.style.display = "none";
-        expanded.style.display = "block";
-        el.textContent = "See less";
+function toggleText(id) {
+    const el = document.getElementById(id);
+    const link = el.nextElementSibling;
+    if (el.classList.contains("collapsed-text")) {
+        el.classList.remove("collapsed-text");
+        link.textContent = "See less";
     } else {
-        collapsed.style.display = "-webkit-box";
-        expanded.style.display = "none";
-        el.textContent = "Read more";
+        el.classList.add("collapsed-text");
+        link.textContent = "Read more";
     }
 }
 
-async function approve(id) {
-    await fetch(`${BACKEND}/api/admin/approve`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD })
-    });
-    loadSubmissions();
-}
+document.addEventListener("DOMContentLoaded", () => {
+    checkXummPaymentFromStorage();
+    checkXummMintFromStorage();
+});
 
-async function reject(id) {
-    const reason = "Rejected by admin (details will be emailed).";
+// -------------------------------------------------------
+// AUTO-POPULATE XRP ↔ RLUSD USING LIVE PRICE
+// -------------------------------------------------------
+let xrpPriceUSD = 0;
 
-    await fetch(`${BACKEND}/api/admin/reject`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id, password: ADMIN_PASSWORD, reason })
-    });
-
-    loadSubmissions();
-}
-
-// ===============================
-// LEARN-TO-EARN ADMIN LOAD (NEW)
-// ===============================
-async function loadLearnActivity() {
-    const res = await fetch(
-        `${BACKEND}/api/admin/learn-activity?password=${ADMIN_PASSWORD}`
-    );
-
-    if (!res.ok) return;
-
-    const rows = await res.json();
-    const tbody = document.querySelector("#learnTable tbody");
-    if (!tbody) return;
-
-    tbody.innerHTML = "";
-
-    for (const r of rows) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${r.id}</td>
-            <td>${r.wallet}</td>
-            <td>${r.submission_id}</td>
-            <td>${r.action_type}</td>
-            <td>${r.action_ref}</td>
-            <td>${r.tokens_earned}</td>
-            <td>${r.tokens_paid}</td>
-            <td>${new Date(r.created_at).toLocaleString()}</td>
-        `;
-        tbody.appendChild(tr);
+async function fetchXRPPrice() {
+    try {
+        const r = await fetch(
+            "https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd"
+        );
+        const d = await r.json();
+        xrpPriceUSD = d.ripple.usd;
+    } catch (e) {
+        console.warn("Failed to fetch XRP price");
     }
 }
+fetchXRPPrice();
+setInterval(fetchXRPPrice, 20000);
 
-loadLearnActivity();
-    loadSubmissions();
+const xrpInput = document.getElementById("priceXRP");
+const rlusdInput = document.getElementById("priceRLUSD");
 
-</script>
+xrpInput.addEventListener("input", () => {
+    if (!xrpPriceUSD) return;
+    if (xrpInput.value === "") {
+        rlusdInput.value = "";
+        return;
+    }
+    const usd = Number(xrpInput.value) * xrpPriceUSD;
+    rlusdInput.value = usd.toFixed(2);
+});
 
+rlusdInput.addEventListener("input", () => {
+    if (!xrpPriceUSD) return;
+    if (rlusdInput.value === "") {
+        xrpInput.value = "";
+        return;
+    }
+    const xrp = Number(rlusdInput.value) / xrpPriceUSD;
+    xrpInput.value = xrp.toFixed(4);
+});
+    
+// -------------------------------
+// LEARN-TO-EARN TOGGLE
+// -------------------------------
+document.getElementById("enableLearn").addEventListener("change", e => {
+  document.getElementById("learnBox").style.display =
+    e.target.checked ? "block" : "none";
+});
+
+</script>  
 <script>
 function sendHeight() {
-    window.parent.postMessage({ cfcHeight: document.body.scrollHeight }, "*");
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ cfcHeight: height }, "*");
 }
+
 setInterval(sendHeight, 500);
 window.onload = sendHeight;
+  function toggleDelist(id, btn){
+  const isDelisted = btn.classList.contains("relist");
+  const action = isDelisted ? "Relist" : "Delist";
+
+  if (!confirm(`Are you sure you want to ${action} this NFT?`)) return;
+
+  if (isDelisted){
+    btn.classList.remove("relist");
+    btn.textContent = "Delist";
+  } else {
+    btn.classList.add("relist");
+    btn.textContent = "Relist";
+  }
+
+  // UI only for now — backend hook can be added later
+}
+  
 </script>
 
 </body>
