@@ -165,10 +165,13 @@ async function loadSubmissions() {
 // LEARN-TO-EARN (ADMIN VIEW)
 // -------------------------------
 
-       const mediaURL = "https://gateway.pinata.cloud/ipfs/" + String(s.image_cid || "").replace("ipfs://", "");
-let preview = `<img src="${mediaURL}" class="preview-img">`;
-
-
+     const imageCid = s.image_cid || md?.image || "";
+const mediaURL = imageCid
+  ? "https://gateway.pinata.cloud/ipfs/" + String(imageCid).replace("ipfs://", "")
+  : ""; 
+let preview = mediaURL
+  ? `<img src="${mediaURL}" class="preview-img">`
+  : "—";
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${s.id}</td>
