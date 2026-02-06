@@ -159,6 +159,7 @@ async function loadSubmissions() {
 
     for (const s of subs) {
         const md = await fetchMetadata(s.metadata_cid);
+        console.log("ADMIN METADATA IMAGE FIELD:", s.id, md?.image);
         console.log("ADMIN IMAGE CHECK:", s.id, s.image_cid, "https://gateway.pinata.cloud/ipfs/" + s.image_cid);
 
 // -------------------------------
