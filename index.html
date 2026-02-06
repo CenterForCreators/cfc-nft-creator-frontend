@@ -537,6 +537,7 @@ if (learnEnabled && learnText.trim()) {
         "metadata.json"
     );
     const md = await (await fetch(BACKEND + "api/upload", { method:"POST", body:fd2 })).json();
+    const metadataCidFinal = md.cid || md.contentCid || null;
 
     await fetch(BACKEND + "api/submit", {
         method:"POST",
@@ -545,8 +546,8 @@ if (learnEnabled && learnText.trim()) {
             wallet:userWallet,
             name,
             description,
-            imageCid: upload.cid,
-            metadataCid: md.cid,
+           imageCid: upload.cid || null,
+metadataCid: metadataCidFinal,
             contentCid: htmlCid,
             website: document.getElementById("website").value,
            contentCid: htmlCid,
