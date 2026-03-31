@@ -161,7 +161,15 @@
   <option value="art">Art</option>
 </select>
     
-
+<label style="margin-top:20px; display:flex; align-items:center; gap:10px;">
+  <input
+    type="checkbox"
+    id="enableAI"
+    style="width:18px;height:18px;cursor:pointer;"
+  >
+  <span>Enable AI Assistant</span>
+</label>
+        
 <!-- LEARN & EARN (required for Learn & Earn) -->
 <!-- ============================= -->
 
@@ -483,6 +491,27 @@ const priceRLUSD = document.getElementById("priceRLUSD").value;
         submitBtn.classList.remove("disabled");
         submitBtn.innerText = "Submit NFT for Approval";
         return;
+       }
+       // ------------------------------
+// AI VALIDATION
+// ------------------------------
+const enableAI = document.getElementById("enableAI").checked;
+
+if (enableAI) {
+  if (!htmlFile) {
+    resultBox.innerHTML = `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">AI Assistant requires content upload.</div>`;
+    submitBtn.classList.remove("disabled");
+    submitBtn.innerText = "Submit NFT for Approval";
+    return;
+  }
+
+  if (category === "art") {
+    resultBox.innerHTML = `<div class="success" style="background:#ffe6e6;border-left:4px solid #d9534f;">AI Assistant is not available for Art.</div>`;
+    submitBtn.classList.remove("disabled");
+    submitBtn.innerText = "Submit NFT for Approval";
+    return;
+  
+}
     }
     // Upload image
     const fd = new FormData();
@@ -521,6 +550,7 @@ const priceRLUSD = document.getElementById("priceRLUSD").value;
     price_xrp: cleanNum(document.getElementById("priceXRP").value),
     price_rlusd: cleanNum(document.getElementById("priceRLUSD").value),
     image: "ipfs://" + upload.cid,
+     ai_enabled: document.getElementById("enableAI").checked
 };
 
 const learnEnabled = document.getElementById("enableLearn").checked;
