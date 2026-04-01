@@ -550,7 +550,9 @@ if (enableAI) {
     price_xrp: cleanNum(document.getElementById("priceXRP").value),
     price_rlusd: cleanNum(document.getElementById("priceRLUSD").value),
     image: "ipfs://" + upload.cid,
-     ai_enabled: document.getElementById("enableAI").checked
+    ai_enabled: document.getElementById("enableAI").checked,
+ai_prompt: "Explain this content clearly, accurately, and step-by-step, aligning closely with the material while thoughtfully expanding on concepts to enhance understanding. Ensure all responses remain grounded in the subject matter, presented in a professional, engaging, and easy-to-understand way without speculation or unsupported claims. Do not guess, do not assume, and provide the most accurate and up-to-date information appropriate to the subject matter.",
+ai_style: "teacher" 
 };
 
 const learnEnabled = document.getElementById("enableLearn").checked;
