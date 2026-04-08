@@ -752,7 +752,9 @@ document.addEventListener("DOMContentLoaded", () => {
     checkXummPaymentFromStorage();
     checkXummMintFromStorage();
 });
-
+setInterval(() => {
+    loadStatus();
+}, 30000);
 // -------------------------------------------------------
 // AUTO-POPULATE XRP ↔ RLUSD USING LIVE PRICE
 // -------------------------------------------------------
