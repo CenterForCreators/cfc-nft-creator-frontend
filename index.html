@@ -579,7 +579,7 @@ if (learnEnabled && learnText.trim()) {
         body:JSON.stringify({
             wallet:userWallet,
             name,
-            description,
+            description: description + "\n\n" + (learnText || ""),
          image_cid: upload.cid || null,
 metadataCid: metadataCidFinal,
             contentCid: htmlCid,
