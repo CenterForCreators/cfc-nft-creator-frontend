@@ -186,8 +186,20 @@ let preview = mediaURL
 </td>
 
           <td>${md?.name || s.name}</td>
-      <td>
+<td>
   ${buildCollapsible(md?.description || s.description)}
+
+  ${
+    md?.learn?.enabled
+      ? `
+        <div style="margin-top:10px;padding:10px;background:#f4f4f4;border-radius:6px;">
+          <strong>Learn-to-Earn Content</strong>
+          ${buildCollapsible(md.learn.content)}
+        </div>
+        `
+      : ""
+  }
+</td>
 
   ${
     md?.learn?.enabled
