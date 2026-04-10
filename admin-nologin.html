@@ -190,19 +190,6 @@ let preview = mediaURL
   ${buildCollapsible(md?.description || s.description)}
   ${md?.learn?.enabled ? buildCollapsible(md.learn.content) : ""}
 </td>
-
-  ${
-    md?.learn?.enabled
-      ? `
-        <div style="margin-top:10px;padding:10px;background:#f4f4f4;border-radius:6px;">
-          <strong>Learn-to-Earn Content</strong>
-         ${buildCollapsible(md.learn.content)}
-
-        </div>
-        `
-      : ""
-  }
-</td>
           <td>${buildCollapsible(md?.terms || s.terms || "—")}</td>
           <td>${s.batch_qty}</td>
           <td>${md?.price_xrp || s.price_xrp || "—"}</td>
