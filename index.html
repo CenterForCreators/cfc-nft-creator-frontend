@@ -582,17 +582,11 @@ if (learnEnabled && learnText.trim()) {
             description: description,
          image_cid: upload.cid || null,
 metadataCid: metadataCidFinal,
-            contentCid: htmlCid,
             website: document.getElementById("website").value,
            contentCid: htmlCid,
             quantity: document.getElementById("quantity").value,
             email: document.getElementById("email").value,
-            metadata: JSON.stringify({
-    terms: metadata.terms,
-    price_xrp: metadata.price_xrp,
-    price_rlusd: metadata.price_rlusd,
-    category: metadata.category
-})
+            metadata: JSON.stringify(metadata)
         })
     });
 
