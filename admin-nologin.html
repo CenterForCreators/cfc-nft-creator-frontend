@@ -168,8 +168,8 @@ async function loadSubmissions() {
 
      const imageCid = s.image_cid || md?.image || "";
 const mediaURL = imageCid
-  ? "https://gateway.pinata.cloud/ipfs/" + String(imageCid).replace("ipfs://", "")
-  : ""; 
+  ? `${BACKEND}/api/ipfs/` + String(imageCid).replace("ipfs://", "").replace("ipfs/", "")
+  : "";
 let preview = mediaURL
   ? `<img src="${mediaURL}" class="preview-img">`
   : "—";
