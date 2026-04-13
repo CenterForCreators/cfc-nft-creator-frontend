@@ -492,17 +492,6 @@ const priceRLUSD = document.getElementById("priceRLUSD").value;
         submitBtn.innerText = "Submit NFT for Approval";
         return;
        }
-    const aiToggle = document.getElementById("enableAI");
-
-aiToggle.addEventListener("change", () => {
-  if (!aiToggle.checked) {
-    const resultBox = document.getElementById("result");
-
-    if (resultBox && resultBox.innerHTML.includes("AI Assistant")) {
-      resultBox.innerHTML = "";
-    }
-  }
-});
        // ------------------------------
 // AI VALIDATION
 // ------------------------------
