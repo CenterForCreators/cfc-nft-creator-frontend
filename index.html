@@ -824,7 +824,23 @@ window.onload = sendHeight;
 
   // UI only for now — backend hook can be added later
 }
-  
+ document.getElementById("enableLearn").addEventListener("change", e => {
+  document.getElementById("learnBox").style.display =
+    e.target.checked ? "block" : "none";
+});
+
+// ✅ ADD THIS RIGHT HERE (NOT inside submitNFT)
+const aiToggle = document.getElementById("enableAI");
+
+aiToggle.addEventListener("change", () => {
+  if (!aiToggle.checked) {
+    const resultBox = document.getElementById("result");
+
+    if (resultBox && resultBox.innerHTML.includes("AI Assistant")) {
+      resultBox.innerHTML = "";
+    }
+  }
+}); 
 </script>
 
 </body>
